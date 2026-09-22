@@ -1,12 +1,35 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb+srv://pushkarchaudhary256_db_user:z6Rv0m626uhtv6ZU@first-backend.pu8xpnw.mongodb.net/project-1');
 
 const userSchema = mongoose.Schema({
-    username: String,
-    name: String,
-    age: Number,
-    email: String,
-    password: String,
+    username: {
+        type: String,
+        required: true,
+        trim: true,
+        unique: true,
+        lowercase: true
+    },
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    age: {
+        type: Number,
+        required: true,
+        min: 13
+    },
+    email: {
+        type: String,
+        required: true,
+        trim: true,
+        unique: true,
+        lowercase: true
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 8
+    },
     posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }]
 });
 

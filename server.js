@@ -1,4 +1,7 @@
+require('dotenv').config();
+
 const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
 const postModel = require('./models/post');
 const userModel = require('./models/user');
@@ -7,57 +10,96 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+
+const connectDB = async () => {
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aafnokura';
+  mongoose.set('strictQuery', true);
+  await mongoose.connect(mongoUri);
+  console.log('MongoDB connected');
+};
 
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 app.get('/', (req, res) => {
   if (req.cookies.token) return res.redirect('/dashboard');
-  res.render('index');
+  res.render('index', { error: null, formValues: {} });
 });
+
 app.post('/register', async (req, res) => {
-  const { email, password, username, name, age } = req.body;
-  const user = await userModel.findOne({ email });
+  const name = String(req.body.name || '').trim();
+  const username = String(req.body.username || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '').trim();
+  const age = Number(req.body.age);
 
-  if (user) return res.status(400).send('User is already registered');
-
-  bcrypt.genSalt(10, (err, salt) => {
-    if (err) return res.status(500).send('Error creating salt');
-
-    bcrypt.hash(password, salt, async (err, hash) => {
-      if (err) return res.status(500).send('Error hashing password');
-
-      await userModel.create({
-        username,
-        name,
-        email,
-        age,
-        password: hash
-      });
-
-      res.redirect('/login');
+  if (!name || !username || !email || !password || !Number.isInteger(age) || age < 13) {
+    return res.status(400).render('index', {
+      error: 'Please enter a valid name, username, age, email, and a password with at least 8 characters.',
+      formValues: { name, username, age: Number.isInteger(age) ? age : '', email }
     });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).render('index', {
+      error: 'Password must be at least 8 characters long.',
+      formValues: { name, username, age, email }
+    });
+  }
+
+  const existingUser = await userModel.findOne({
+    $or: [{ email }, { username: username.toLowerCase() }]
   });
+
+  if (existingUser) {
+    return res.status(400).render('index', {
+      error: 'An account with that username or email already exists.',
+      formValues: { name, username, age, email }
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await userModel.create({
+    username: username.toLowerCase(),
+    name,
+    email,
+    age,
+    password: hashedPassword
+  });
+
+  return res.redirect('/login');
 });
+
 app.get('/login', (req, res) => {
   if (req.cookies.token) return res.redirect('/dashboard');
-  res.render('login');
+  res.render('login', { error: null });
 });
 
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '').trim();
   const user = await userModel.findOne({ email });
 
-  if (!user) return res.status(400).send('Something went wrong');
+  if (!user) {
+    return res.status(400).render('login', { error: 'Invalid email or password.' });
+  }
 
-  bcrypt.compare(password, user.password, (err, result) => {
-    if (err || !result) return res.redirect('/login');
+  const isPasswordCorrect = await bcrypt.compare(password, user.password);
+  if (!isPasswordCorrect) {
+    return res.status(400).render('login', { error: 'Invalid email or password.' });
+  }
 
-    const token = jwt.sign({ email: user.email, userid: user._id }, 'shhhh');
-    res.cookie('token', token);
-    return res.redirect('/dashboard');
+  const token = jwt.sign({ email: user.email, userid: user._id.toString() }, JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
   });
+  return res.redirect('/dashboard');
 });
 
 app.get('/dashboard', isLoggedIn, async (req, res) => {
@@ -167,7 +209,7 @@ function isLoggedIn(req, res, next) {
   if (!req.cookies.token) return res.redirect('/login');
 
   try {
-    const data = jwt.verify(req.cookies.token, 'shhhh');
+    const data = jwt.verify(req.cookies.token, JWT_SECRET);
     req.user = data;
     return next();
   } catch (err) {
@@ -175,4 +217,18 @@ function isLoggedIn(req, res, next) {
   }
 }
 
-app.listen(PORT, () => console.log('Server running on port ' + PORT));
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => console.log('Server running on port ' + PORT));
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1);
+  }
+};
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, connectDB };

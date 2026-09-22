@@ -14,12 +14,18 @@
         <p class="mt-2 text-sm text-gray-500">Create your account</p>
       </div>
 
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <%= error %>
+        </div>
+      <% } %>
+
       <form action="/register" method="post" class="space-y-3">
-        <input type="text" name="name" placeholder="Name" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" />
-        <input type="text" name="username" placeholder="Username" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" />
-        <input type="number" name="age" placeholder="Age" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" />
-        <input type="email" name="email" placeholder="Email" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" />
-        <input type="password" name="password" placeholder="Password" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" />
+        <input type="text" name="name" value="<%= typeof formValues !== 'undefined' ? formValues.name || '' : '' %>" placeholder="Name" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" required />
+        <input type="text" name="username" value="<%= typeof formValues !== 'undefined' ? formValues.username || '' : '' %>" placeholder="Username" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" required />
+        <input type="number" name="age" value="<%= typeof formValues !== 'undefined' ? formValues.age || '' : '' %>" min="13" placeholder="Age" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" required />
+        <input type="email" name="email" value="<%= typeof formValues !== 'undefined' ? formValues.email || '' : '' %>" placeholder="Email" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" required />
+        <input type="password" name="password" placeholder="Password" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl outline-none focus:border-black transition" required />
 
         <button type="submit" class="w-full px-3 py-2.5 bg-black text-white rounded-xl cursor-pointer hover:bg-gray-800 transition font-medium">
           Create Account
