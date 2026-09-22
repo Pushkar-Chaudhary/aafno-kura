@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feed</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <%- include('partials/navbar', { user }) %>
+
+  <main class="max-w-3xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+    <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+      <h2 class="text-2xl font-bold">Community Feed</h2>
+      <p class="text-gray-500 mt-1">See what everyone is posting.</p>
+    </div>
+
+    <div class="space-y-5">
+      <% posts.forEach(function(post) { %>
+        <article class="bg-white rounded-2xl shadow-sm p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <p class="font-semibold">@<%= post.user.username %></p>
+              <p class="text-xs text-gray-500"><%= new Date(post.date).toLocaleString() %></p>
+            </div>
+          </div>
+
+          <p class="text-gray-800 whitespace-pre-wrap"><%= post.content %></p>
+
+          <div class="mt-4 flex items-center gap-4 text-sm">
+            <form action="/post/<%= post._id %>/like" method="post">
+              <button type="submit" class="text-blue-600">👍 <%= post.likes.length %></button>
+            </form>
+          </div>
+
+          <div class="mt-5 space-y-3 border-t pt-4">
+            <% post.comments.forEach(function(comment) { %>
+              <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                <p class="font-semibold text-gray-700">@<%= comment.user.username %></p>
+                <p class="text-gray-700 mt-1"><%= comment.text %></p>
+              </div>
+            <% }) %>
+
+            <form action="/post/<%= post._id %>/comment" method="post" class="flex gap-2">
+              <input
+                type="text"
+                name="comment"
+                placeholder="Write a comment..."
+                class="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <button type="submit" class="bg-black text-white px-4 py-2 rounded-full text-sm">Comment</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  </main>
+</body>
+</html>
