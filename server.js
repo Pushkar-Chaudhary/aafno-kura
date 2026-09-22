@@ -4,19 +4,19 @@ const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
-const app = express();
-const postModel = require('./models/post');
-const userModel = require('./models/user');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const postModel = require('./models/post');
+const userModel = require('./models/user');
+
+const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-}
+// Enable trust proxy for cloud deployment (Render, Railway, Heroku, Cloudflare)
+app.set('trust proxy', 1);
 
 const connectDB = async () => {
   const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aafnokura';
@@ -26,261 +26,431 @@ const connectDB = async () => {
 };
 
 app.set('view engine', 'ejs');
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(rateLimit({
+
+// Rate Limiter: Active for security, but explicitly skipped for localhost testing
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    const ip = req.ip || req.socket?.remoteAddress || '';
+    const host = req.hostname || req.headers?.host || '';
+    return (
+      ip === '127.0.0.1' ||
+      ip === '::1' ||
+      ip === '::ffff:127.0.0.1' ||
+      host.includes('localhost') ||
+      host.includes('127.0.0.1')
+    );
+  },
   message: 'Too many requests from this IP, please try again later.'
-}));
+});
+app.use(limiter);
 
+// Authentication Middleware
+async function isLoggedIn(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) return res.redirect('/login');
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await userModel.findById(decoded.userid);
+    if (!user) {
+      res.clearCookie('token');
+      return res.redirect('/login');
+    }
+    req.user = decoded;
+    req.currentUser = user;
+    return next();
+  } catch (err) {
+    res.clearCookie('token');
+    return res.redirect('/login');
+  }
+}
+
+// Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Home Page (Register)
 app.get('/', (req, res) => {
-  if (req.cookies.token) return res.redirect('/dashboard');
+  if (req.cookies.token) {
+    try {
+      jwt.verify(req.cookies.token, JWT_SECRET);
+      return res.redirect('/dashboard');
+    } catch (e) {
+      res.clearCookie('token');
+    }
+  }
   res.render('index', { error: null, formValues: {} });
 });
 
+// Register User
 app.post('/register', async (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const username = String(req.body.username || '').trim().toLowerCase();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '').trim();
+  const rawAge = req.body.age;
+  const age = rawAge ? Number(rawAge) : 18;
+
+  const formValues = { name, username, email, age: rawAge || '' };
+
+  if (!name || !username || !email || !password) {
+    return res.status(400).render('index', {
+      error: 'Please fill in all required fields.',
+      formValues
+    });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).render('index', {
+      error: 'Please enter a valid email address.',
+      formValues
+    });
+  }
+
+  const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+  if (!usernameRegex.test(username)) {
+    return res.status(400).render('index', {
+      error: 'Username must be 3-30 characters (letters, numbers, and underscores only).',
+      formValues
+    });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).render('index', {
+      error: 'Password must be at least 8 characters long.',
+      formValues
+    });
+  }
+
+  if (isNaN(age) || age < 13) {
+    return res.status(400).render('index', {
+      error: 'You must be at least 13 years old to register.',
+      formValues
+    });
+  }
+
   try {
-    const name = String(req.body.name || '').trim();
-    const username = String(req.body.username || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '').trim();
-    const age = Number(req.body.age);
-
-    if (!name || !username || !email || !password || !Number.isInteger(age) || age < 13) {
-      return res.status(400).render('index', {
-        error: 'Please enter a valid name, username, age, email, and a password with at least 8 characters.',
-        formValues: { name, username, age: Number.isInteger(age) ? age : '', email }
-      });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).render('index', {
-        error: 'Password must be at least 8 characters long.',
-        formValues: { name, username, age, email }
-      });
-    }
-
     const existingUser = await userModel.findOne({
-      $or: [{ email }, { username: username.toLowerCase() }]
+      $or: [{ email }, { username }]
     });
 
     if (existingUser) {
+      const isEmailMatch = existingUser.email === email;
       return res.status(400).render('index', {
-        error: 'An account with that username or email already exists.',
-        formValues: { name, username, age, email }
+        error: isEmailMatch
+          ? 'An account with that email already exists.'
+          : 'That username is already taken.',
+        formValues
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     await userModel.create({
-      username: username.toLowerCase(),
       name,
+      username,
       email,
-      age,
-      password: hashedPassword
+      password: hashedPassword,
+      age
     });
 
-    return res.redirect('/login');
+    return res.redirect('/login?registered=1');
   } catch (error) {
     console.error('Register error:', error);
-
-    if (error && error.code === 11000) {
-      return res.status(400).render('index', {
-        error: 'That username or email is already in use.',
-        formValues: {
-          name: String(req.body.name || '').trim(),
-          username: String(req.body.username || '').trim(),
-          age: Number(req.body.age),
-          email: String(req.body.email || '').trim().toLowerCase()
-        }
-      });
-    }
-
     return res.status(500).render('index', {
-      error: 'Something went wrong while creating your account. Please try again.',
-      formValues: {
-        name: String(req.body.name || '').trim(),
-        username: String(req.body.username || '').trim(),
-        age: Number(req.body.age),
-        email: String(req.body.email || '').trim().toLowerCase()
-      }
+      error: 'Something went wrong during account creation. Please try again.',
+      formValues
     });
   }
 });
 
+// Login Page
 app.get('/login', (req, res) => {
-  if (req.cookies.token) return res.redirect('/dashboard');
-  res.render('login', { error: null });
+  if (req.cookies.token) {
+    try {
+      jwt.verify(req.cookies.token, JWT_SECRET);
+      return res.redirect('/dashboard');
+    } catch (e) {
+      res.clearCookie('token');
+    }
+  }
+  const registered = req.query.registered === '1';
+  res.render('login', { error: null, registered });
 });
 
+// Login User
 app.post('/login', async (req, res) => {
+  const identifier = String(req.body.identifier || req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '').trim();
+
+  if (!identifier || !password) {
+    return res.status(400).render('login', {
+      error: 'Please enter your username/email and password.',
+      registered: false
+    });
+  }
+
   try {
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '').trim();
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({
+      $or: [{ email: identifier }, { username: identifier }]
+    });
 
     if (!user) {
-      return res.status(400).render('login', { error: 'Invalid email or password.' });
+      return res.status(400).render('login', {
+        error: 'Invalid username/email or password.',
+        registered: false
+      });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).render('login', { error: 'Invalid email or password.' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).render('login', {
+        error: 'Invalid username/email or password.',
+        registered: false
+      });
     }
 
-      const token = jwt.sign({ email: user.email, userid: user._id.toString() }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { userid: user._id.toString(), email: user.email, username: user.username },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
+
     return res.redirect('/dashboard');
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).render('login', { error: 'Something went wrong while logging in. Please try again.' });
+    return res.status(500).render('login', {
+      error: 'Something went wrong while logging in. Please try again.',
+      registered: false
+    });
   }
 });
 
+// Dashboard
 app.get('/dashboard', isLoggedIn, async (req, res) => {
-  const user = await userModel.findOne({ email: req.user.email }).populate('posts');
-  const posts = await postModel.find({ user: user._id }).populate('user', 'name username').sort({ date: -1 });
+  try {
+    const posts = await postModel
+      .find({ user: req.currentUser._id })
+      .populate('user', 'name username')
+      .sort({ date: -1 });
 
-  res.render('dashboard', { user, posts });
+    res.render('dashboard', { user: req.currentUser, posts });
+  } catch (err) {
+    console.error('Dashboard error:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
+// Feed
 app.get('/feed', isLoggedIn, async (req, res) => {
-  const user = await userModel.findOne({ email: req.user.email });
-  const posts = await postModel.find({}).populate('user', 'name username').populate('comments.user', 'name username').sort({ date: -1 });
+  try {
+    const posts = await postModel
+      .find({})
+      .populate('user', 'name username')
+      .populate('comments.user', 'name username')
+      .sort({ date: -1 })
+      .limit(100);
 
-  res.render('feed', { user, posts });
+    res.render('feed', { user: req.currentUser, posts });
+  } catch (err) {
+    console.error('Feed error:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
+// Profile
 app.get('/profile', isLoggedIn, async (req, res) => {
-  const user = await userModel.findOne({ email: req.user.email }).populate('posts');
-  if (!user) return res.redirect('/login');
+  try {
+    const posts = await postModel
+      .find({ user: req.currentUser._id })
+      .sort({ date: -1 });
 
-  res.render('profile', { user });
+    const totalLikes = posts.reduce((acc, p) => acc + (p.likes ? p.likes.length : 0), 0);
+
+    res.render('profile', { user: req.currentUser, posts, totalLikes });
+  } catch (err) {
+    console.error('Profile error:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
+// Create Post
 app.post('/post', isLoggedIn, async (req, res) => {
-  const user = await userModel.findOne({ email: req.user.email });
-  const { content } = req.body;
+  const content = String(req.body.content || '').trim();
+  if (!content) return res.redirect('/dashboard');
 
-  if (!content || !content.trim()) return res.redirect('/dashboard');
-
-  const post = await postModel.create({
-    user: user._id,
-    content: content.trim()
-  });
-
-  user.posts.push(post._id);
-  await user.save();
-
-  res.redirect('/dashboard');
-});
-
-app.post('/post/:id/like', isLoggedIn, async (req, res) => {
-  const post = await postModel.findById(req.params.id);
-  if (!post) return res.redirect('/feed');
-
-  const alreadyLiked = post.likes.some((id) => id.toString() === req.user.userid);
-  if (!alreadyLiked) {
-    post.likes.push(req.user.userid);
-    await post.save();
+  if (content.length > 2000) {
+    return res.redirect('/dashboard');
   }
 
-  res.redirect(req.get('Referer') || '/feed');
+  try {
+    const post = await postModel.create({
+      user: req.currentUser._id,
+      content
+    });
+
+    req.currentUser.posts.push(post._id);
+    await req.currentUser.save();
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error('Create post error:', err);
+    res.redirect('/dashboard');
+  }
 });
 
+// Toggle Like / Unlike
+app.post('/post/:id/like', isLoggedIn, async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.redirect(req.get('Referer') || '/feed');
+
+    const userIdStr = req.currentUser._id.toString();
+    const alreadyLikedIndex = post.likes.findIndex((id) => id.toString() === userIdStr);
+
+    if (alreadyLikedIndex !== -1) {
+      post.likes.splice(alreadyLikedIndex, 1);
+    } else {
+      post.likes.push(req.currentUser._id);
+    }
+
+    await post.save();
+    res.redirect(req.get('Referer') || '/feed');
+  } catch (err) {
+    console.error('Like error:', err);
+    res.redirect(req.get('Referer') || '/feed');
+  }
+});
+
+// Add Comment
 app.post('/post/:id/comment', isLoggedIn, async (req, res) => {
-  const post = await postModel.findById(req.params.id);
-  const { comment } = req.body;
+  const text = String(req.body.comment || '').trim();
+  if (!text || text.length > 500) return res.redirect(req.get('Referer') || '/feed');
 
-  if (!post || !comment || !comment.trim()) return res.redirect(req.get('Referer') || '/feed');
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.redirect(req.get('Referer') || '/feed');
 
-  post.comments.push({
-    user: req.user.userid,
-    text: comment.trim()
-  });
+    post.comments.push({
+      user: req.currentUser._id,
+      text
+    });
 
-  await post.save();
-  res.redirect(req.get('Referer') || '/feed');
+    await post.save();
+    res.redirect(req.get('Referer') || '/feed');
+  } catch (err) {
+    console.error('Comment error:', err);
+    res.redirect(req.get('Referer') || '/feed');
+  }
 });
 
+// Edit Post Page
 app.get('/post/:id/edit', isLoggedIn, async (req, res) => {
-  const post = await postModel.findById(req.params.id);
-  if (!post) return res.redirect('/dashboard');
-  if (post.user.toString() !== req.user.userid) return res.status(403).send('Not allowed');
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.redirect('/dashboard');
 
-  res.render('edit-post', { post });
+    if (post.user.toString() !== req.currentUser._id.toString()) {
+      return res.status(403).send('Unauthorized to edit this post');
+    }
+
+    res.render('edit-post', { user: req.currentUser, post });
+  } catch (err) {
+    console.error('Edit post GET error:', err);
+    res.redirect('/dashboard');
+  }
 });
 
+// Update Post
 app.post('/post/:id/edit', isLoggedIn, async (req, res) => {
-  const post = await postModel.findById(req.params.id);
-  if (!post) return res.redirect('/dashboard');
-  if (post.user.toString() !== req.user.userid) return res.status(403).send('Not allowed');
+  const content = String(req.body.content || '').trim();
 
-  post.content = req.body.content.trim();
-  await post.save();
-  res.redirect('/dashboard');
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.redirect('/dashboard');
+
+    if (post.user.toString() !== req.currentUser._id.toString()) {
+      return res.status(403).send('Unauthorized to edit this post');
+    }
+
+    if (content && content.length <= 2000) {
+      post.content = content;
+      await post.save();
+    }
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error('Edit post POST error:', err);
+    res.redirect('/dashboard');
+  }
 });
 
+// Delete Post
 app.post('/post/:id/delete', isLoggedIn, async (req, res) => {
-  const post = await postModel.findById(req.params.id);
-  if (!post) return res.redirect('/dashboard');
-  if (post.user.toString() !== req.user.userid) return res.status(403).send('Not allowed');
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.redirect('/dashboard');
 
-  await postModel.findByIdAndDelete(req.params.id);
+    if (post.user.toString() !== req.currentUser._id.toString()) {
+      return res.status(403).send('Unauthorized to delete this post');
+    }
 
-  const user = await userModel.findOne({ email: req.user.email });
-  user.posts = user.posts.filter((id) => id.toString() !== req.params.id);
-  await user.save();
+    await postModel.findByIdAndDelete(req.params.id);
 
-  res.redirect('/dashboard');
+    req.currentUser.posts = req.currentUser.posts.filter(
+      (id) => id.toString() !== req.params.id
+    );
+    await req.currentUser.save();
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error('Delete post error:', err);
+    res.redirect('/dashboard');
+  }
 });
 
+// Logout
 app.get('/logout', (req, res) => {
-  res.cookie('token', '', { maxAge: 0 });
+  res.clearCookie('token');
   res.redirect('/login');
 });
 
-function isLoggedIn(req, res, next) {
-  if (!req.cookies.token) return res.redirect('/login');
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).render('404');
+});
 
-  try {
-    const data = jwt.verify(req.cookies.token, JWT_SECRET);
-    req.user = data;
-    return next();
-  } catch (err) {
-    return res.redirect('/login');
-  }
-}
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => console.log('Server running on port ' + PORT));
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
     process.exit(1);
   }
 };
-
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
 
 if (require.main === module) {
   startServer();
