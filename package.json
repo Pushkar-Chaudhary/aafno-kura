@@ -13,7 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "ejs": "^6.0.1",
@@ -23,8 +23,5 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
     "nodemon": "^3.1.14"
-  },
-  "allowScripts": {
-    "bcrypt@6.0.0": true
   }
 }
