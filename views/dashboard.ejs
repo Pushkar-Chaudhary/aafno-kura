@@ -25,7 +25,7 @@
 
           <div class="mt-6 space-y-3 text-sm text-gray-600">
             <p><strong>@<%= user.username %></strong></p>
-            <p><strong><%= user.posts.length %></strong> posts</p>
+            <p><strong><%= user.posts ? user.posts.length : 0 %></strong> posts</p>
             <p><strong><%= posts.length %></strong> in your dashboard</p>
           </div>
         </div>
