@@ -6,95 +6,105 @@
   <title>Aafnokura | Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background-color: #f3f6f0;
-      background-image: 
-        radial-gradient(rgba(4, 120, 87, 0.08) 0.5px, transparent 0.5px),
-        linear-gradient(to right, rgba(6, 78, 59, 0.02) 1px, transparent 1px);
-      background-size: 14px 14px, 40px 40px;
+    body {
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 22%),
+        linear-gradient(135deg, #f9f6f2 0%, #f3f7ff 45%, #f8fafc 100%);
+      color: #0f172a;
     }
-    .font-newspaper { font-family: 'Newsreader', serif; }
+    .font-brand { font-family: 'Manrope', sans-serif; }
   </style>
 </head>
-<body class="text-emerald-950 antialiased min-h-screen selection:bg-emerald-800 selection:text-amber-100">
+<body class="text-slate-800 antialiased min-h-screen selection:bg-violet-500 selection:text-white">
   <%- include('partials/navbar', { user, activePage: 'profile' }) %>
 
   <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-    
-    <!-- Profile Card Header -->
-    <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.1)] p-6 sm:p-8 mb-8">
-      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-        <div class="w-20 h-20 rounded-xl bg-emerald-950 text-amber-100 border-2 border-emerald-800 flex items-center justify-center font-newspaper font-black text-4xl shadow-md shrink-0">
-          <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+    <div class="mb-8 rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm sm:p-8">
+      <div class="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm">
+          <% const isAdminProfile = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
+          <% if (isAdminProfile) { %>
+            <span class="text-4xl font-black">A</span>
+          <% } else { %>
+            <svg class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21a8 8 0 0 0-16 0"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          <% } %>
         </div>
-        <div class="space-y-1">
-          <div class="flex items-center gap-3 justify-center sm:justify-start">
-            <h1 class="font-newspaper font-black text-3xl text-emerald-950"><%= user.name %></h1>
+
+        <div class="flex-1 space-y-1">
+          <div class="flex items-center justify-center gap-3 sm:justify-start">
+            <h1 class="text-3xl font-extrabold text-slate-900"><%= user.name %></h1>
             <% if (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com') { %>
-              <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded bg-amber-500 text-emerald-950">Editor-in-Chief</span>
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-900">Admin</span>
             <% } %>
           </div>
-          <p class="text-xs font-mono font-bold text-emerald-700">@<%= user.username %></p>
-          <p class="text-xs font-serif italic text-emerald-800/70"><%= user.email %></p>
+          <p class="text-xs font-semibold text-violet-600">@<%= user.username %></p>
+          <p class="text-xs text-slate-500"><%= user.email %></p>
+          <div class="pt-3">
+            <a href="/profile/edit" class="inline-flex items-center rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:from-violet-500 hover:to-violet-600">
+              Edit profile
+            </a>
+          </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-emerald-900/10 max-w-sm">
-        <div class="bg-[#f3f6f0] rounded-lg p-4 text-center border border-emerald-900/10">
-          <p class="text-[10px] text-emerald-800/70 font-bold uppercase tracking-wider">Dispatches Published</p>
-          <p class="font-newspaper text-3xl font-black text-emerald-950 mt-0.5"><%= posts.length %></p>
+      <div class="mt-6 grid max-w-sm grid-cols-2 gap-4 border-t border-slate-200 pt-6">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Posts</p>
+          <p class="mt-1 text-3xl font-extrabold text-slate-900"><%= posts.length %></p>
         </div>
-        <div class="bg-[#f3f6f0] rounded-lg p-4 text-center border border-emerald-900/10">
-          <p class="text-[10px] text-emerald-800/70 font-bold uppercase tracking-wider">Reader Endorsements</p>
-          <p class="font-newspaper text-3xl font-black text-emerald-950 mt-0.5"><%= typeof totalLikes !== 'undefined' ? totalLikes : 0 %></p>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Likes</p>
+          <p class="mt-1 text-3xl font-extrabold text-slate-900"><%= typeof totalLikes !== 'undefined' ? totalLikes : 0 %></p>
         </div>
       </div>
     </div>
 
-    <!-- Publications List -->
     <div class="space-y-4">
-      <div class="flex items-center justify-between border-b-2 border-emerald-950/20 pb-2">
-        <h2 class="font-newspaper font-black text-2xl text-emerald-950">Your Complete Portfolio</h2>
-        <span class="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-900/20"><%= posts.length %> Articles</span>
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h2 class="text-2xl font-extrabold text-slate-900">Your posts</h2>
+        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"><%= posts.length %> total</span>
       </div>
 
       <% if (!posts || posts.length === 0) { %>
-        <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 p-10 text-center space-y-3">
-          <p class="font-newspaper font-bold text-emerald-950 text-lg">You haven't published any articles yet</p>
-          <a href="/dashboard" class="inline-block text-xs font-bold px-4 py-2.5 bg-emerald-900 text-amber-100 rounded-lg shadow hover:bg-emerald-950 transition">
-            Draft Your First Article &rarr;
+        <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p class="text-lg font-bold text-slate-900">You have not published anything yet.</p>
+          <a href="/dashboard" class="mt-4 inline-block rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-700">
+            Draft your first post →
           </a>
         </div>
       <% } else { %>
         <% posts.forEach(function(post) { %>
           <% const isLiked = post.likes ? post.likes.some(id => id.toString() === user._id.toString()) : false; %>
-          <article class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.08)] p-6 space-y-4">
-            <div class="flex items-center justify-between text-xs border-b border-emerald-900/10 pb-3 font-serif italic text-emerald-800/60">
-              <span>PUBLISHED: <%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+          <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-xs text-slate-500">
+              <span><%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
             </div>
 
-            <div class="font-serif text-emerald-950 text-sm leading-relaxed whitespace-pre-wrap">
-              <span class="float-left text-3xl font-newspaper font-extrabold leading-none pr-2 text-emerald-900"><%= post.content.charAt(0) %></span><%= post.content.slice(1) %>
+            <div class="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+              <%= post.content %>
             </div>
 
-            <div class="pt-3 border-t border-emerald-900/10 flex items-center justify-between text-xs font-bold">
+            <div class="mt-5 flex items-center justify-between border-t border-slate-200 pt-3 text-xs font-bold">
               <form action="/post/<%= post._id %>/like" method="post" class="inline">
-                <button type="submit" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border transition-all active:scale-95 <%= isLiked ? 'bg-rose-50 text-rose-800 border-rose-300' : 'bg-emerald-50 text-emerald-900 border-emerald-900/20 hover:bg-emerald-100' %>">
-                  <span>&hearts; <%= post.likes ? post.likes.length : 0 %> Endorsements</span>
+                <button type="submit" class="rounded-lg border px-3.5 py-1.5 transition active:scale-95 <%= isLiked ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' %>">
+                  ♥ <%= post.likes ? post.likes.length : 0 %>
                 </button>
               </form>
 
               <div class="flex items-center space-x-2">
-                <a href="/post/<%= post._id %>/edit" class="px-3.5 py-1.5 rounded-lg border border-emerald-900/20 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition-all">
+                <a href="/post/<%= post._id %>/edit" class="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700 hover:bg-slate-100">
                   Edit
                 </a>
-                <form action="/post/<%= post._id %>/delete" method="post" onsubmit="return confirm('Retract this article?');" class="inline">
-                  <button type="submit" class="px-3.5 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 transition-all">
-                    Retract
+                <form action="/post/<%= post._id %>/delete" method="post" onsubmit="return confirm('Delete this post?');" class="inline">
+                  <button type="submit" class="rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-rose-700 hover:bg-rose-100">
+                    Delete
                   </button>
                 </form>
               </div>

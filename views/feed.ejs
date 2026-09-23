@@ -6,46 +6,38 @@
   <title>Aafnokura | Community Feed</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background-color: #f3f6f0;
-      background-image: 
-        radial-gradient(rgba(4, 120, 87, 0.08) 0.5px, transparent 0.5px),
-        linear-gradient(to right, rgba(6, 78, 59, 0.02) 1px, transparent 1px);
-      background-size: 14px 14px, 40px 40px;
+    body {
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 22%),
+        linear-gradient(135deg, #f9f6f2 0%, #f3f7ff 45%, #f8fafc 100%);
+      color: #0f172a;
     }
-    .font-newspaper { font-family: 'Newsreader', serif; }
+    .font-brand { font-family: 'Manrope', sans-serif; }
   </style>
 </head>
-<body class="text-emerald-950 antialiased min-h-screen selection:bg-emerald-800 selection:text-amber-100">
+<body class="text-slate-800 antialiased min-h-screen selection:bg-violet-500 selection:text-white">
   <%- include('partials/navbar', { user, activePage: 'feed' }) %>
 
   <% const currentUserIsAdmin = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
 
   <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-    
-    <!-- Headline Header Banner -->
-    <div class="mb-8 border-t-2 border-b-2 border-emerald-950/30 py-5 text-center space-y-1 bg-[#fafcf7]/80 backdrop-blur-sm">
-      <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-emerald-800/80 px-4 border-b border-emerald-950/10 pb-2 mb-2">
-        <span>Public Domain</span>
-        <span>Community Chronicle &bull; Main Edition</span>
-        <span>Live Dispatch</span>
-      </div>
-      <h1 class="font-newspaper font-black text-3xl sm:text-5xl tracking-tight text-emerald-950">The Daily Community Feed</h1>
-      <p class="text-xs font-serif italic text-emerald-900/70">"Reporting public opinions, thoughts, and community reports."</p>
+    <div class="mb-8 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+      <p class="text-[10px] font-bold uppercase tracking-[0.26em] text-violet-600">Community feed</p>
+      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Latest posts</h1>
+      <p class="mt-1 text-sm text-slate-500">Updates from everyone in the community.</p>
     </div>
 
-    <!-- Feed Content -->
     <div class="space-y-6">
       <% if (!posts || posts.length === 0) { %>
-        <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-sm p-12 text-center space-y-3">
-          <p class="font-newspaper font-bold text-xl text-emerald-950">No Gazette Reports Published Yet</p>
-          <p class="text-xs font-serif italic text-emerald-800/70">Be the first contributor to submit a story to the record!</p>
-          <a href="/dashboard" class="inline-block mt-2 px-4 py-2 bg-emerald-900 text-amber-100 text-xs font-bold rounded-lg shadow">
-            + Publish Article
+        <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+          <p class="text-xl font-bold text-slate-900">No posts yet</p>
+          <p class="mt-2 text-sm text-slate-500">Be the first person to publish something.</p>
+          <a href="/dashboard" class="mt-4 inline-block rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-700">
+            + Create post
           </a>
         </div>
       <% } %>
@@ -57,85 +49,80 @@
         <% const authorIsAdmin = post.user && (post.user.role === 'admin' || post.user.email === 'pushkarchaudhary256@gmail.com'); %>
         <% const isPostOwner = post.user && (post.user._id ? post.user._id.toString() : post.user.toString()) === user._id.toString(); %>
 
-        <article class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.08)] p-6 space-y-4 hover:border-emerald-800/40 transition-all">
-          
-          <!-- Article Header -->
-          <div class="flex items-center justify-between border-b border-emerald-900/10 pb-3">
+        <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
             <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-emerald-950 text-amber-100 flex items-center justify-center font-newspaper font-bold text-lg shadow-sm border border-emerald-800">
-                <%= authorName.charAt(0).toUpperCase() %>
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white">
+                <% if (authorIsAdmin) { %>
+                  <span class="text-sm font-extrabold">A</span>
+                <% } else { %>
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21a8 8 0 0 0-16 0"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                <% } %>
               </div>
               <div>
                 <div class="flex items-center gap-2">
-                  <p class="font-newspaper font-bold text-base text-emerald-950 leading-none"><%= authorName %></p>
+                  <p class="text-base font-bold text-slate-900"><%= authorName %></p>
                   <% if (authorIsAdmin) { %>
-                    <span class="px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded bg-amber-500 text-emerald-950">Editor-in-Chief</span>
+                    <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-slate-900">Admin</span>
                   <% } %>
                 </div>
-                <p class="text-xs font-mono font-bold text-emerald-700 mt-0.5">@<%= authorUsername %></p>
+                <p class="mt-0.5 text-xs font-semibold text-violet-600">@<%= authorUsername %></p>
               </div>
             </div>
 
             <div class="flex items-center space-x-3">
-              <span class="font-serif italic text-xs text-emerald-800/60">
+              <span class="text-xs text-slate-500">
                 <%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
               </span>
               <% if (isPostOwner || currentUserIsAdmin) { %>
-                <form action="/post/<%= post._id %>/delete" method="post" class="inline" onsubmit="return confirm('Retract this publication?');">
-                  <button type="submit" class="text-[11px] font-bold px-2.5 py-1 rounded bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 transition-all">
-                    <%= currentUserIsAdmin && !isPostOwner ? 'Retract (Admin)' : 'Retract' %>
+                <form action="/post/<%= post._id %>/delete" method="post" class="inline" onsubmit="return confirm('Delete this post?');">
+                  <button type="submit" class="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100">
+                    <%= currentUserIsAdmin && !isPostOwner ? 'Delete (Admin)' : 'Delete' %>
                   </button>
                 </form>
               <% } %>
             </div>
           </div>
 
-          <!-- Newspaper Article Text -->
-          <div class="font-serif text-emerald-950 text-sm leading-relaxed whitespace-pre-wrap">
-            <span class="float-left text-3xl font-newspaper font-extrabold leading-none pr-2 text-emerald-900"><%= post.content.charAt(0) %></span><%= post.content.slice(1) %>
+          <div class="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+            <%= post.content %>
           </div>
 
-          <!-- Footer Actions -->
-          <div class="pt-3 border-t border-emerald-900/10 flex items-center space-x-4 text-xs font-bold">
+          <div class="mt-5 flex items-center space-x-4 border-t border-slate-200 pt-3 text-xs font-bold">
             <form action="/post/<%= post._id %>/like" method="post">
-              <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all active:scale-95 <%= isLiked ? 'bg-rose-50 text-rose-800 border-rose-300' : 'bg-emerald-50 text-emerald-900 border-emerald-900/20 hover:bg-emerald-100' %>">
-                <span>&hearts; <%= post.likes ? post.likes.length : 0 %> Endorsements</span>
+              <button type="submit" class="rounded-lg border px-3 py-1.5 transition active:scale-95 <%= isLiked ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' %>">
+                ♥ <%= post.likes ? post.likes.length : 0 %>
               </button>
             </form>
 
-            <span class="text-emerald-900/80 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-900/20">
-              <span class="font-serif font-bold">&para;</span>
-              <span><%= post.comments ? post.comments.length : 0 %> Reader Letters</span>
+            <span class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700">
+              <%= post.comments ? post.comments.length : 0 %> comments
             </span>
           </div>
 
-          <!-- Letters to the Editor (Comments) -->
-          <div class="pt-4 border-t border-emerald-900/10 space-y-3">
+          <div class="mt-5 space-y-3 border-t border-slate-200 pt-4">
             <% if (post.comments && post.comments.length > 0) { %>
-              <div class="space-y-2 bg-[#f3f6f0] rounded-lg p-3 max-h-64 overflow-y-auto border border-emerald-900/10">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-800/60 pb-1 border-b border-emerald-900/10">Letters to the Editor</p>
-                
+              <div class="max-h-64 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-3">
                 <% post.comments.forEach(function(comment) { %>
                   <% const commentUser = comment.user ? comment.user.username : 'anonymous'; %>
                   <% const commentUserId = comment.user ? (comment.user._id ? comment.user._id.toString() : comment.user.toString()) : ''; %>
                   <% const isCommentOwner = commentUserId === user._id.toString(); %>
 
-                  <div class="text-xs bg-[#fafcf7] rounded-lg p-3 border border-emerald-900/10 space-y-1">
-                    <div class="flex items-center justify-between border-b border-emerald-900/5 pb-1">
-                      <span class="font-mono font-bold text-emerald-800">FROM @<%= commentUser %></span>
-                      
+                  <div class="rounded-xl border border-slate-200 bg-white p-3 text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+                      <span class="font-semibold text-slate-700">@<%= commentUser %></span>
+
                       <% if (isCommentOwner || isPostOwner || currentUserIsAdmin) { %>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center gap-2">
                           <% if (isCommentOwner) { %>
-                            <button 
-                              type="button" 
-                              onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.toggle('hidden')"
-                              class="text-[10px] font-bold text-emerald-700 hover:underline"
-                            >
+                            <button type="button" onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.toggle('hidden')" class="text-[10px] font-bold text-violet-700 hover:underline">
                               Edit
                             </button>
                           <% } %>
-                          <form action="/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="post" class="inline" onsubmit="return confirm('Delete this letter?');">
+                          <form action="/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="post" class="inline" onsubmit="return confirm('Delete this comment?');">
                             <button type="submit" class="text-[10px] font-bold text-rose-700 hover:underline">
                               <%= currentUserIsAdmin && !isCommentOwner && !isPostOwner ? 'Remove (Admin)' : 'Remove' %>
                             </button>
@@ -144,21 +131,14 @@
                       <% } %>
                     </div>
 
-                    <p class="font-serif text-emerald-950 leading-relaxed"><%= comment.text %></p>
+                    <p class="mt-2 text-slate-700"><%= comment.text %></p>
 
                     <% if (isCommentOwner) { %>
-                      <!-- Hidden Edit Form -->
-                      <form id="edit-comment-<%= comment._id %>" action="/post/<%= post._id %>/comment/<%= comment._id %>/edit" method="post" class="hidden pt-2 space-y-2">
-                        <input 
-                          type="text" 
-                          name="comment" 
-                          value="<%= comment.text %>" 
-                          class="w-full bg-[#f3f6f0] border border-emerald-900/20 rounded px-3 py-1.5 text-xs font-serif outline-none focus:bg-white focus:border-emerald-800 transition" 
-                          required 
-                        />
-                        <div class="flex justify-end gap-2">
-                          <button type="button" onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.add('hidden')" class="px-2.5 py-1 text-[10px] font-bold text-emerald-900 bg-emerald-100 rounded">Cancel</button>
-                          <button type="submit" class="px-2.5 py-1 text-[10px] font-bold text-amber-100 bg-emerald-900 rounded">Save Letter</button>
+                      <form id="edit-comment-<%= comment._id %>" action="/post/<%= post._id %>/comment/<%= comment._id %>/edit" method="post" class="hidden pt-2">
+                        <input type="text" name="comment" value="<%= comment.text %>" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" required />
+                        <div class="mt-2 flex justify-end gap-2">
+                          <button type="button" onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.add('hidden')" class="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold text-slate-700">Cancel</button>
+                          <button type="submit" class="rounded-lg bg-violet-600 px-2.5 py-1.5 text-[10px] font-bold text-white">Save</button>
                         </div>
                       </form>
                     <% } %>
@@ -167,25 +147,23 @@
               </div>
             <% } %>
 
-            <!-- Add Comment Form -->
             <form action="/post/<%= post._id %>/comment" method="post" class="flex gap-2">
               <input
                 type="text"
                 name="comment"
-                placeholder="Write a letter in response..."
-                class="flex-1 bg-[#f3f6f0] border border-emerald-900/20 rounded-lg px-4 py-2.5 text-xs font-serif outline-none focus:bg-white focus:border-emerald-800 focus:ring-2 focus:ring-emerald-900/10 transition-all placeholder:text-emerald-900/40"
+                placeholder="Write a comment..."
+                class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder:text-slate-400"
                 required
               />
-              <button type="submit" class="px-4 py-2.5 bg-emerald-900 hover:bg-emerald-950 text-amber-100 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer">
-                Submit Letter
+              <button type="submit" class="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-700">
+                Comment
               </button>
             </form>
           </div>
-
         </article>
       <% }) %>
     </div>
-
   </main>
 </body>
 </html>
+

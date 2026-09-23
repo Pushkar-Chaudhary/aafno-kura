@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 
 const postModel = require('./models/post');
 const userModel = require('./models/user');
+const { sanitizeProfileUpdate } = require('./utils/profile');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -318,6 +319,96 @@ app.get('/profile', isLoggedIn, async (req, res) => {
   } catch (err) {
     console.error('Profile error:', err);
     res.status(500).send('Internal Server Error');
+  }
+});
+
+// Edit Profile
+app.get('/profile/edit', isLoggedIn, async (req, res) => {
+  try {
+    const user = await userModel.findById(req.currentUser._id);
+    if (!user) return res.redirect('/login');
+
+    res.render('edit-profile', {
+      user,
+      error: null,
+      values: {
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        age: user.age
+      }
+    });
+  } catch (err) {
+    console.error('Edit profile GET error:', err);
+    res.redirect('/profile');
+  }
+});
+
+app.post('/profile/edit', isLoggedIn, async (req, res) => {
+  const rawValues = {
+    name: req.body.name,
+    username: req.body.username,
+    email: req.body.email,
+    age: req.body.age || 18
+  };
+
+  let sanitized;
+  try {
+    sanitized = sanitizeProfileUpdate(rawValues);
+  } catch (error) {
+    return res.status(400).render('edit-profile', {
+      user: req.currentUser,
+      error: error.message,
+      values: rawValues
+    });
+  }
+
+  try {
+    const existingUser = await userModel.findOne({
+      $or: [{ email: sanitized.email }, { username: sanitized.username }]
+    });
+
+    if (existingUser && existingUser._id.toString() !== req.currentUser._id.toString()) {
+      return res.status(400).render('edit-profile', {
+        user: req.currentUser,
+        error: existingUser.email === sanitized.email
+          ? 'That email is already in use.'
+          : 'That username is already taken.',
+        values: sanitized
+      });
+    }
+
+    const user = await userModel.findById(req.currentUser._id);
+    if (!user) return res.redirect('/login');
+
+    user.name = sanitized.name;
+    user.username = sanitized.username;
+    user.email = sanitized.email;
+    user.age = sanitized.age;
+    await user.save();
+
+    req.currentUser = user;
+    const token = jwt.sign(
+      { userid: user._id.toString(), email: user.email, username: user.username },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.redirect('/profile');
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).render('edit-profile', {
+      user: req.currentUser,
+      error: 'Something went wrong while updating your profile.',
+      values: sanitized || rawValues
+    });
   }
 });
 

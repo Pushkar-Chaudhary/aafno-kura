@@ -6,150 +6,138 @@
   <title>Aafnokura | Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background-color: #f3f6f0;
-      background-image: 
-        radial-gradient(rgba(4, 120, 87, 0.08) 0.5px, transparent 0.5px),
-        linear-gradient(to right, rgba(6, 78, 59, 0.02) 1px, transparent 1px);
-      background-size: 14px 14px, 40px 40px;
+    body {
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 22%),
+        linear-gradient(135deg, #f9f6f2 0%, #f3f7ff 45%, #f8fafc 100%);
+      color: #0f172a;
     }
-    .font-newspaper { font-family: 'Newsreader', serif; }
+    .font-brand { font-family: 'Manrope', sans-serif; }
   </style>
 </head>
-<body class="text-emerald-950 antialiased min-h-screen selection:bg-emerald-800 selection:text-amber-100">
+<body class="text-slate-800 antialiased min-h-screen selection:bg-violet-500 selection:text-white">
   <%- include('partials/navbar', { user, activePage: 'dashboard' }) %>
 
   <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-    
-    <!-- Editorial Headline Banner -->
-    <div class="mb-8 border-t-2 border-b-2 border-emerald-950/30 py-4 text-center space-y-1 bg-[#fafcf7]/60 backdrop-blur-sm">
-      <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-800">Special Edition &bull; Personal Desk</p>
-      <h1 class="font-newspaper font-extrabold text-3xl sm:text-4xl tracking-tight text-emerald-950">The Contributor's Dashboard</h1>
-      <p class="text-xs font-serif italic text-emerald-900/70">"All the community updates fit to publish."</p>
+    <div class="mb-8 rounded-2xl border border-slate-200 bg-white/90 px-6 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm">
+      <p class="text-[10px] font-bold uppercase tracking-[0.26em] text-violet-600">Your workspace</p>
+      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Dashboard</h1>
+      <p class="mt-1 text-sm text-slate-500">Create updates, manage your posts, and keep your profile tidy.</p>
     </div>
 
     <div class="grid gap-8 lg:grid-cols-3">
-      
-      <!-- Journalist Summary Sidebar -->
       <aside class="lg:col-span-1 space-y-6">
-        <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.1)] p-6 space-y-6 sticky top-28">
-          <div class="flex items-center space-x-4 border-b border-emerald-900/10 pb-5">
-            <div class="w-14 h-14 rounded-lg bg-emerald-950 text-amber-100 border-2 border-emerald-800 flex items-center justify-center font-newspaper font-extrabold text-3xl shadow-sm">
-              <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sticky top-28">
+          <div class="flex items-center space-x-4 border-b border-slate-200 pb-5">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm">
+              <% const isAdminDashboard = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
+              <% if (isAdminDashboard) { %>
+                <span class="text-2xl font-extrabold">A</span>
+              <% } else { %>
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              <% } %>
             </div>
             <div class="space-y-0.5">
-              <h2 class="font-newspaper font-bold text-xl text-emerald-950 leading-tight"><%= user.name %></h2>
-              <p class="text-xs font-mono font-bold text-emerald-700">@<%= user.username %></p>
+              <h2 class="text-xl font-bold text-slate-900"><%= user.name %></h2>
+              <p class="text-xs font-semibold text-violet-600">@<%= user.username %></p>
               <% if (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com') { %>
-                <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded bg-amber-500 text-emerald-950">Editor-in-Chief</span>
+                <span class="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-900">Admin</span>
               <% } else { %>
-                <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-emerald-100 text-emerald-900 border border-emerald-900/20">Staff Writer</span>
+                <span class="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-700">Member</span>
               <% } %>
             </div>
           </div>
 
-          <div class="space-y-3 text-xs font-medium text-emerald-900/80">
-            <div class="flex items-center justify-between border-b border-emerald-900/10 pb-2">
-              <span class="text-emerald-800/70 uppercase text-[10px] font-bold tracking-wider">Registered Mail</span>
-              <span class="font-semibold text-emerald-950"><%= user.email %></span>
+          <div class="mt-5 space-y-3 text-xs font-medium text-slate-600">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span class="uppercase tracking-wide text-slate-500">Email</span>
+              <span class="font-semibold text-slate-900"><%= user.email %></span>
             </div>
-            <div class="flex items-center justify-between border-b border-emerald-900/10 pb-2">
-              <span class="text-emerald-800/70 uppercase text-[10px] font-bold tracking-wider">Dispatches Authored</span>
-              <span class="font-newspaper font-extrabold text-sm px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-900/20"><%= posts.length %></span>
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span class="uppercase tracking-wide text-slate-500">Posts</span>
+              <span class="rounded-full bg-violet-50 px-2.5 py-1 text-sm font-extrabold text-violet-700"><%= posts.length %></span>
             </div>
           </div>
 
-          <a href="/feed" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-900 hover:bg-emerald-950 text-amber-100 font-bold text-xs rounded-lg transition-all shadow-sm">
-            Read Gazette Feed &rarr;
+          <a href="/feed" class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-2.5 text-xs font-bold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:from-violet-500 hover:to-violet-600">
+            Open feed →
           </a>
         </div>
       </aside>
 
-      <!-- Main Column -->
       <section class="lg:col-span-2 space-y-6">
-        
-        <!-- Post Composer Card -->
-        <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.1)] p-6 space-y-4">
-          <div class="flex items-center justify-between border-b border-emerald-900/10 pb-3">
-            <h3 class="font-newspaper font-bold text-lg text-emerald-950 flex items-center gap-2">
-              <span class="text-emerald-700 font-serif">&sect;</span>
-              Draft a New Article
-            </h3>
-            <span id="charCounter" class="text-xs font-mono font-bold text-emerald-800/60">0 / 2000</span>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h3 class="text-lg font-bold text-slate-900">Create a post</h3>
+            <span id="charCounter" class="text-xs font-bold text-slate-500">0 / 2000</span>
           </div>
 
-          <form action="/post" method="post" class="space-y-3">
+          <form action="/post" method="post" class="mt-4 space-y-3">
             <textarea
               id="postInput"
               name="content"
               rows="4"
               maxlength="2000"
-              placeholder="Write your story, report, or announcement here..."
-              class="w-full bg-[#f3f6f0] border border-emerald-900/20 rounded-lg p-4 font-serif text-sm text-emerald-950 outline-none focus:bg-white focus:border-emerald-800 focus:ring-2 focus:ring-emerald-900/10 transition-all resize-none placeholder:text-emerald-900/40"
+              placeholder="Write your update..."
+              class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder:text-slate-400 shadow-inner"
               required
             ></textarea>
-            
+
             <div class="flex items-center justify-between pt-1">
-              <p class="text-[11px] font-serif italic text-emerald-800/60">Express yourself clearly for the community record.</p>
-              <button 
-                type="submit" 
-                class="px-5 py-2.5 bg-emerald-900 hover:bg-emerald-950 text-amber-100 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
-              >
-                Publish Article &rarr;
+              <p class="text-[11px] text-slate-500">Share something useful with the community.</p>
+              <button type="submit" class="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:from-violet-500 hover:to-violet-600">
+                Publish post →
               </button>
             </div>
           </form>
         </div>
 
-        <!-- Personal Publications -->
         <div class="space-y-4">
-          <div class="flex items-center justify-between border-b-2 border-emerald-950/20 pb-2">
-            <h3 class="font-newspaper font-extrabold text-xl text-emerald-950">
-              Your Printed Articles
-            </h3>
-            <span class="text-xs font-bold font-mono px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-900/20"><%= posts.length %> Published</span>
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <h3 class="text-xl font-extrabold text-slate-900">Your posts</h3>
+            <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"><%= posts.length %> published</span>
           </div>
 
           <% if (posts.length === 0) { %>
-            <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 p-10 text-center space-y-3">
-              <p class="font-newspaper font-bold text-emerald-950 text-lg">No articles published yet</p>
-              <p class="text-xs font-serif italic text-emerald-800/70">Draft your first submission using the publishing form above!</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+              <p class="text-lg font-bold text-slate-900">No posts yet</p>
+              <p class="mt-2 text-sm text-slate-500">Your first post will appear here.</p>
             </div>
           <% } %>
 
           <% posts.forEach(function(post) { %>
             <% const isLiked = post.likes ? post.likes.some(id => id.toString() === user._id.toString()) : false; %>
-            <article class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.08)] p-6 space-y-4 hover:border-emerald-800/40 transition-all">
-              <div class="flex items-center justify-between text-xs border-b border-emerald-900/10 pb-3">
-                <span class="font-mono font-bold text-emerald-900">BY @<%= post.user ? post.user.username : user.username %></span>
-                <span class="font-serif italic text-emerald-800/60">
-                  DATE: <%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %>
-                </span>
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-3 text-xs text-slate-500">
+                <span class="font-semibold text-slate-700">@<%= post.user ? post.user.username : user.username %></span>
+                <span><%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
               </div>
 
-              <!-- Newspaper Article Content -->
-              <div class="font-serif text-emerald-950 text-sm leading-relaxed whitespace-pre-wrap">
-                <span class="float-left text-3xl font-newspaper font-extrabold leading-none pr-2 text-emerald-900"><%= post.content.charAt(0) %></span><%= post.content.slice(1) %>
+              <div class="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                <%= post.content %>
               </div>
 
-              <div class="pt-3 border-t border-emerald-900/10 flex items-center justify-between text-xs font-bold">
+              <div class="mt-5 flex items-center justify-between border-t border-slate-200 pt-3 text-xs font-bold">
                 <form action="/post/<%= post._id %>/like" method="post" class="inline">
-                  <button type="submit" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border transition-all active:scale-95 <%= isLiked ? 'bg-rose-50 text-rose-800 border-rose-300' : 'bg-emerald-50 text-emerald-900 border-emerald-900/20 hover:bg-emerald-100' %>">
-                    <span>&hearts; <%= post.likes ? post.likes.length : 0 %> Endorsements</span>
+                  <button type="submit" class="rounded-lg border px-3.5 py-1.5 transition active:scale-95 <%= isLiked ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' %>">
+                    ♥ <%= post.likes ? post.likes.length : 0 %>
                   </button>
                 </form>
 
                 <div class="flex items-center space-x-2">
-                  <a href="/post/<%= post._id %>/edit" class="px-3.5 py-1.5 rounded-lg border border-emerald-900/20 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition-all">
+                  <a href="/post/<%= post._id %>/edit" class="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-slate-700 hover:bg-slate-100">
                     Edit
                   </a>
-                  <form action="/post/<%= post._id %>/delete" method="post" onsubmit="return confirm('Retract this publication?');" class="inline">
-                    <button type="submit" class="px-3.5 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 transition-all">
-                      Retract
+                  <form action="/post/<%= post._id %>/delete" method="post" onsubmit="return confirm('Delete this post?');" class="inline">
+                    <button type="submit" class="rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-rose-700 hover:bg-rose-100">
+                      Delete
                     </button>
                   </form>
                 </div>
@@ -157,7 +145,6 @@
             </article>
           <% }) %>
         </div>
-
       </section>
     </div>
   </main>
@@ -173,4 +160,5 @@
     }
   </script>
 </body>
+</html>
 </html>
