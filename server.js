@@ -17,14 +17,16 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
 // Enable trust proxy for cloud deployment (Vercel, Render, Railway, Cloudflare)
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // MongoDB connection helper for local and serverless
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://pushkarchaudhary256_db_user:z6Rv0m626uhtv6ZU@first-backend.pu8xpnw.mongodb.net/project-1';
   mongoose.set('strictQuery', true);
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 5000,
+  });
 };
 
 // Database Connection Middleware
@@ -51,6 +53,7 @@ const limiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   skip: (req) => {
     const ip = req.ip || req.socket?.remoteAddress || '';
     const host = req.hostname || req.headers?.host || '';
