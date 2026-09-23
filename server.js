@@ -19,57 +19,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 // Enable trust proxy for cloud deployment (Vercel, Render, Railway, Cloudflare)
 app.set('trust proxy', 1);
 
-// Global cache for MongoDB connection across serverless invocations
-let cached = global.mongoose;
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
+// MongoDB connection helper for local and serverless
 const connectDB = async () => {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aafnokura';
-    mongoose.set('strictQuery', true);
-
-    cached.promise = mongoose.connect(mongoUri, {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 5000
-    }).then((mongooseInstance) => {
-      console.log('MongoDB connected');
-      return mongooseInstance;
-    }).catch((err) => {
-      cached.promise = null;
-      throw err;
-    });
-  }
-
-  try {
-    cached.conn = await cached.promise;
-  } catch (err) {
-    cached.promise = null;
-    throw err;
-  }
-
-  return cached.conn;
+  if (mongoose.connection.readyState >= 1) return;
+  const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://pushkarchaudhary256_db_user:z6Rv0m626uhtv6ZU@first-backend.pu8xpnw.mongodb.net/project-1';
+  mongoose.set('strictQuery', true);
+  await mongoose.connect(mongoUri);
 };
 
-// Database Connection Middleware for Serverless & Cloud deployment
+// Database Connection Middleware
 app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (err) {
     console.error('Database connection error:', err);
-    res.status(500).send(`
-      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 40px; text-align: center; max-width: 600px; margin: 40px auto; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-        <h2 style="color: #e53e3e; margin-top: 0;">Database Connection Error</h2>
-        <p style="color: #4a5568;">Unable to connect to MongoDB. If this is deployed on Vercel, please make sure you have added the <strong>MONGODB_URI</strong> environment variable in your Vercel Project Settings.</p>
-        <p style="color: #718096; font-size: 13px; background: #f7fafc; padding: 12px; border-radius: 6px; word-break: break-all; font-family: monospace;">${err.message}</p>
-      </div>
-    `);
+    next(err);
   }
 });
 
