@@ -3,33 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aafnokura | Edit Post</title>
+  <title>Aafnokura | Edit Article</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;0,6..72,800;1,6..72,400;1,6..72,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background-color: #f3f6f0;
+      background-image: 
+        radial-gradient(rgba(4, 120, 87, 0.08) 0.5px, transparent 0.5px),
+        linear-gradient(to right, rgba(6, 78, 59, 0.02) 1px, transparent 1px);
+      background-size: 14px 14px, 40px 40px;
+    }
+    .font-newspaper { font-family: 'Newsreader', serif; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-zinc-50 via-zinc-100/50 to-indigo-50/20 text-zinc-900 antialiased min-h-screen selection:bg-indigo-500 selection:text-white">
+<body class="text-emerald-950 antialiased min-h-screen selection:bg-emerald-800 selection:text-amber-100">
   <%- include('partials/navbar', { user, activePage: 'dashboard' }) %>
 
   <main class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
-    <div class="bg-white/90 backdrop-blur-xl rounded-3xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 space-y-6">
-      <h1 class="text-xl font-bold text-zinc-900 flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-        Edit Your Post
+    <div class="bg-[#fafcf7] rounded-xl border border-emerald-900/20 shadow-[2px_3px_0px_rgba(6,78,59,0.1)] p-6 sm:p-8 space-y-6">
+      <h1 class="font-newspaper font-extrabold text-2xl text-emerald-950 flex items-center gap-2 border-b border-emerald-900/10 pb-3">
+        <span class="text-emerald-700">&sect;</span>
+        Edit Printed Article
       </h1>
 
       <form action="/post/<%= post._id %>/edit" method="post" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-zinc-600 uppercase tracking-wider mb-1.5">Post Content</label>
+          <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1.5">Article Body</label>
           <textarea
             name="content"
-            rows="5"
+            rows="6"
             maxlength="2000"
-            class="w-full bg-zinc-50/80 border border-zinc-200 rounded-2xl p-4 text-sm font-medium text-zinc-900 outline-none focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all resize-none"
+            class="w-full bg-[#f3f6f0] border border-emerald-900/20 rounded-lg p-4 font-serif text-sm text-emerald-950 outline-none focus:bg-white focus:border-emerald-800 focus:ring-2 focus:ring-emerald-900/10 transition-all resize-none"
             required
           ><%= post.content %></textarea>
         </div>
@@ -37,13 +45,13 @@
         <div class="flex items-center gap-3 pt-2">
           <button 
             type="submit" 
-            class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-2xl shadow-md shadow-indigo-600/20 transition-all"
+            class="px-5 py-2.5 bg-emerald-900 hover:bg-emerald-950 text-amber-100 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
           >
-            Save Changes
+            Save Revision &rarr;
           </button>
           <a 
             href="/dashboard" 
-            class="px-5 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-semibold rounded-2xl transition-all"
+            class="px-5 py-2.5 bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 text-xs font-bold rounded-lg transition-all border border-emerald-900/20"
           >
             Cancel
           </a>

@@ -1,57 +1,76 @@
-<nav class="bg-white/70 backdrop-blur-xl border-b border-zinc-200/80 sticky top-0 z-50 transition-all">
+<header class="bg-[#f3f6f0]/95 backdrop-blur-md border-b-2 border-emerald-900/30 sticky top-0 z-50">
+  <!-- Newspaper Top Banner / Issue Line -->
+  <div class="bg-emerald-950 text-emerald-200/90 text-[10px] uppercase font-semibold tracking-widest py-1 px-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <span>VOL. I &bull; NO. 24 &bull; KATHMANDU & WORLD</span>
+      <span class="font-bold text-amber-300/90 hidden sm:inline">&ndash; THE DAILY AAFNOKURA GAZETTE &ndash;</span>
+      <span><%= new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+    </div>
+  </div>
+
   <div class="max-w-6xl mx-auto px-4 sm:px-6">
     <div class="flex justify-between h-16 items-center">
+      
+      <!-- Brand / Newspaper Title -->
       <div class="flex items-center space-x-8">
-        <a href="/dashboard" class="flex items-center gap-2.5 text-lg font-bold tracking-tight text-zinc-900 group">
-          <div class="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-violet-500 text-white rounded-xl flex items-center justify-center font-black text-base shadow-sm shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-200">
+        <a href="/dashboard" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 bg-emerald-900 text-amber-100 border-2 border-emerald-800 rounded-lg flex items-center justify-center font-newspaper font-extrabold text-2xl shadow-sm group-hover:bg-emerald-800 transition-colors">
             A
           </div>
-          <span class="font-extrabold bg-gradient-to-r from-zinc-900 via-zinc-800 to-indigo-900 bg-clip-text text-transparent">Aafnokura</span>
+          <div class="flex flex-col">
+            <span class="font-newspaper font-black text-2xl tracking-tight text-emerald-950 leading-none group-hover:text-emerald-800 transition-colors">Aafnokura</span>
+            <span class="text-[9px] font-bold tracking-widest text-emerald-700 uppercase">The Community Chronicle</span>
+          </div>
         </a>
-        <div class="hidden sm:flex items-center space-x-1 text-sm font-medium">
-          <a href="/dashboard" class="px-3.5 py-2 rounded-xl transition-all duration-200 <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-2xs' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80' %>">
+
+        <!-- Navigation Links -->
+        <div class="hidden sm:flex items-center space-x-1 text-xs font-bold uppercase tracking-wider">
+          <a href="/dashboard" class="px-3.5 py-2 rounded-lg transition-all <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'bg-emerald-900 text-amber-100 shadow-2xs font-bold' : 'text-emerald-900/80 hover:text-emerald-950 hover:bg-emerald-800/10' %>">
             Dashboard
           </a>
-          <a href="/feed" class="px-3.5 py-2 rounded-xl transition-all duration-200 <%= typeof activePage !== 'undefined' && activePage === 'feed' ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-2xs' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80' %>">
-            Feed
+          <a href="/feed" class="px-3.5 py-2 rounded-lg transition-all <%= typeof activePage !== 'undefined' && activePage === 'feed' ? 'bg-emerald-900 text-amber-100 shadow-2xs font-bold' : 'text-emerald-900/80 hover:text-emerald-950 hover:bg-emerald-800/10' %>">
+            Gazette Feed
           </a>
-          <a href="/notifications" class="px-3.5 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 <%= typeof activePage !== 'undefined' && activePage === 'notifications' ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-2xs' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80' %>">
-            <span>Notifications</span>
+          <a href="/notifications" class="px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 <%= typeof activePage !== 'undefined' && activePage === 'notifications' ? 'bg-emerald-900 text-amber-100 shadow-2xs font-bold' : 'text-emerald-900/80 hover:text-emerald-950 hover:bg-emerald-800/10' %>">
+            <span>Dispatch</span>
             <% const unreadCount = user && user.notifications ? user.notifications.filter(n => !n.read).length : 0; %>
             <% if (unreadCount > 0) { %>
-              <span class="w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center animate-pulse"><%= unreadCount %></span>
+              <span class="w-4 h-4 bg-amber-500 text-emerald-950 rounded-full text-[10px] font-black flex items-center justify-center shadow-2xs"><%= unreadCount %></span>
             <% } %>
           </a>
-          <a href="/profile" class="px-3.5 py-2 rounded-xl transition-all duration-200 <%= typeof activePage !== 'undefined' && activePage === 'profile' ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-2xs' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80' %>">
+          <a href="/profile" class="px-3.5 py-2 rounded-lg transition-all <%= typeof activePage !== 'undefined' && activePage === 'profile' ? 'bg-emerald-900 text-amber-100 shadow-2xs font-bold' : 'text-emerald-900/80 hover:text-emerald-950 hover:bg-emerald-800/10' %>">
             Profile
           </a>
         </div>
       </div>
 
+      <!-- Right User Controls -->
       <div class="flex items-center space-x-3">
-        <a href="/notifications" class="sm:hidden p-2 text-zinc-600 hover:text-indigo-600 relative">
+        <a href="/notifications" class="sm:hidden p-2 text-emerald-900 hover:text-emerald-700 relative">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           <% const unreadMobile = user && user.notifications ? user.notifications.filter(n => !n.read).length : 0; %>
           <% if (unreadMobile > 0) { %>
-            <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
           <% } %>
         </a>
 
-        <a href="/profile" class="flex items-center space-x-2.5 text-xs font-semibold text-zinc-700 hover:text-indigo-600 transition-all bg-zinc-100/80 hover:bg-zinc-100 px-3 py-1.5 rounded-full border border-zinc-200/80 shadow-2xs">
-          <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+        <a href="/profile" class="flex items-center space-x-2 text-xs font-bold text-emerald-950 hover:text-emerald-700 transition bg-emerald-100/70 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-900/20">
+          <div class="w-5 h-5 rounded bg-emerald-900 text-amber-100 flex items-center justify-center text-[10px] font-newspaper font-bold">
             <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
           </div>
-          <span class="hidden md:inline">@<%= user.username %></span>
+          <span class="hidden md:inline font-mono">@<%= user.username %></span>
           <% if (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com') { %>
-            <span class="px-2 py-0.5 text-[9px] font-black tracking-wider uppercase rounded-full bg-amber-500 text-white shadow-2xs">Admin</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded bg-amber-500 text-emerald-950">Editor-in-Chief</span>
           <% } %>
         </a>
-        <a href="/logout" class="px-3.5 py-1.5 text-xs font-semibold text-zinc-600 hover:text-rose-600 bg-zinc-100/60 hover:bg-rose-50 rounded-xl border border-zinc-200/60 hover:border-rose-200 transition-all">
+
+        <a href="/logout" class="px-3 py-1.5 text-xs font-bold text-emerald-900 hover:text-rose-700 bg-emerald-100/50 hover:bg-rose-50 rounded-lg border border-emerald-900/20 hover:border-rose-300 transition-colors">
           Logout
         </a>
       </div>
+
     </div>
   </div>
-</nav>
+</header>
