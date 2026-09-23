@@ -86,6 +86,13 @@ async function isLoggedIn(req, res, next) {
       res.clearCookie('token');
       return res.redirect('/login');
     }
+
+    // Auto-promote pushkarchaudhary256@gmail.com to Admin
+    if (user.email === 'pushkarchaudhary256@gmail.com' && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
+    }
+
     req.user = decoded;
     req.currentUser = user;
     return next();
@@ -177,12 +184,14 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const isAdmin = email === 'pushkarchaudhary256@gmail.com';
     await userModel.create({
       name,
       username,
       email,
       password: hashedPassword,
-      age
+      age,
+      role: isAdmin ? 'admin' : 'user'
     });
 
     return res.redirect('/login?registered=1');
@@ -436,8 +445,9 @@ app.post('/post/:postId/comment/:commentId/delete', isLoggedIn, async (req, res)
 
     const isCommentOwner = comment.user.toString() === req.currentUser._id.toString();
     const isPostOwner = post.user.toString() === req.currentUser._id.toString();
+    const isAdmin = req.currentUser.role === 'admin' || req.currentUser.email === 'pushkarchaudhary256@gmail.com';
 
-    if (!isCommentOwner && !isPostOwner) {
+    if (!isCommentOwner && !isPostOwner && !isAdmin) {
       return res.status(403).send('Unauthorized to delete this comment');
     }
 
@@ -537,23 +547,30 @@ app.post('/post/:id/edit', isLoggedIn, async (req, res) => {
 app.post('/post/:id/delete', isLoggedIn, async (req, res) => {
   try {
     const post = await postModel.findById(req.params.id);
-    if (!post) return res.redirect('/dashboard');
+    if (!post) return res.redirect(req.get('Referer') || '/dashboard');
 
-    if (post.user.toString() !== req.currentUser._id.toString()) {
+    const isPostOwner = post.user.toString() === req.currentUser._id.toString();
+    const isAdmin = req.currentUser.role === 'admin' || req.currentUser.email === 'pushkarchaudhary256@gmail.com';
+
+    if (!isPostOwner && !isAdmin) {
       return res.status(403).send('Unauthorized to delete this post');
     }
 
     await postModel.findByIdAndDelete(req.params.id);
 
-    req.currentUser.posts = req.currentUser.posts.filter(
-      (id) => id.toString() !== req.params.id
-    );
-    await req.currentUser.save();
+    // Remove post ID from author's posts list
+    const postAuthor = await userModel.findById(post.user);
+    if (postAuthor) {
+      postAuthor.posts = postAuthor.posts.filter(
+        (id) => id.toString() !== req.params.id
+      );
+      await postAuthor.save();
+    }
 
-    res.redirect('/dashboard');
+    res.redirect(req.get('Referer') || '/dashboard');
   } catch (err) {
     console.error('Delete post error:', err);
-    res.redirect('/dashboard');
+    res.redirect(req.get('Referer') || '/dashboard');
   }
 });
 
