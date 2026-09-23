@@ -21,11 +21,16 @@ app.set('trust proxy', true);
 
 // MongoDB connection helper for local and serverless
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
+  if (mongoose.connection.readyState === 1) return;
+  if (mongoose.connection.readyState === 2) {
+    await new Promise((res) => setTimeout(res, 300));
+    if (mongoose.connection.readyState === 1) return;
+  }
   const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://pushkarchaudhary256_db_user:z6Rv0m626uhtv6ZU@first-backend.pu8xpnw.mongodb.net/project-1';
   mongoose.set('strictQuery', true);
   await mongoose.connect(mongoUri, {
     serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
   });
 };
 
@@ -456,7 +461,10 @@ app.use((req, res) => {
 // Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message || 'An unexpected error occurred.'
+  });
 });
 
 const startServer = async () => {
