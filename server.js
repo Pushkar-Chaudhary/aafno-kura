@@ -81,7 +81,7 @@ async function isLoggedIn(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await userModel.findById(decoded.userid);
+    const user = await userModel.findById(decoded.userid).populate('notifications.sender', 'name username');
     if (!user) {
       res.clearCookie('token');
       return res.redirect('/login');
@@ -272,7 +272,7 @@ app.get('/dashboard', isLoggedIn, async (req, res) => {
       .populate('user', 'name username')
       .sort({ date: -1 });
 
-    res.render('dashboard', { user: req.currentUser, posts });
+    res.render('dashboard', { user: req.currentUser, posts, activePage: 'dashboard' });
   } catch (err) {
     console.error('Dashboard error:', err);
     res.status(500).send('Internal Server Error');
@@ -289,7 +289,7 @@ app.get('/feed', isLoggedIn, async (req, res) => {
       .sort({ date: -1 })
       .limit(100);
 
-    res.render('feed', { user: req.currentUser, posts });
+    res.render('feed', { user: req.currentUser, posts, activePage: 'feed' });
   } catch (err) {
     console.error('Feed error:', err);
     res.status(500).send('Internal Server Error');
@@ -305,7 +305,7 @@ app.get('/profile', isLoggedIn, async (req, res) => {
 
     const totalLikes = posts.reduce((acc, p) => acc + (p.likes ? p.likes.length : 0), 0);
 
-    res.render('profile', { user: req.currentUser, posts, totalLikes });
+    res.render('profile', { user: req.currentUser, posts, totalLikes, activePage: 'profile' });
   } catch (err) {
     console.error('Profile error:', err);
     res.status(500).send('Internal Server Error');
@@ -360,7 +360,7 @@ app.post('/post/:id/like', isLoggedIn, async (req, res) => {
   }
 });
 
-// Add Comment
+// Add Comment & Trigger Notification
 app.post('/post/:id/comment', isLoggedIn, async (req, res) => {
   const text = String(req.body.comment || '').trim();
   if (!text || text.length > 500) return res.redirect(req.get('Referer') || '/feed');
@@ -375,10 +375,120 @@ app.post('/post/:id/comment', isLoggedIn, async (req, res) => {
     });
 
     await post.save();
+
+    // Trigger notification if commenter is not post author
+    if (post.user.toString() !== req.currentUser._id.toString()) {
+      const postOwner = await userModel.findById(post.user);
+      if (postOwner) {
+        postOwner.notifications.unshift({
+          sender: req.currentUser._id,
+          type: 'comment',
+          post: post._id,
+          message: `${req.currentUser.name} (@${req.currentUser.username}) commented: "${text.length > 30 ? text.substring(0, 30) + '...' : text}"`,
+          read: false,
+          date: new Date()
+        });
+        await postOwner.save();
+      }
+    }
+
     res.redirect(req.get('Referer') || '/feed');
   } catch (err) {
     console.error('Comment error:', err);
     res.redirect(req.get('Referer') || '/feed');
+  }
+});
+
+// Edit Comment
+app.post('/post/:postId/comment/:commentId/edit', isLoggedIn, async (req, res) => {
+  const text = String(req.body.comment || '').trim();
+  if (!text || text.length > 500) return res.redirect(req.get('Referer') || '/feed');
+
+  try {
+    const post = await postModel.findById(req.params.postId);
+    if (!post) return res.redirect(req.get('Referer') || '/feed');
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.redirect(req.get('Referer') || '/feed');
+
+    if (comment.user.toString() !== req.currentUser._id.toString()) {
+      return res.status(403).send('Unauthorized to edit this comment');
+    }
+
+    comment.text = text;
+    await post.save();
+
+    res.redirect(req.get('Referer') || '/feed');
+  } catch (err) {
+    console.error('Edit comment error:', err);
+    res.redirect(req.get('Referer') || '/feed');
+  }
+});
+
+// Delete Comment
+app.post('/post/:postId/comment/:commentId/delete', isLoggedIn, async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.postId);
+    if (!post) return res.redirect(req.get('Referer') || '/feed');
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.redirect(req.get('Referer') || '/feed');
+
+    const isCommentOwner = comment.user.toString() === req.currentUser._id.toString();
+    const isPostOwner = post.user.toString() === req.currentUser._id.toString();
+
+    if (!isCommentOwner && !isPostOwner) {
+      return res.status(403).send('Unauthorized to delete this comment');
+    }
+
+    post.comments.pull(req.params.commentId);
+    await post.save();
+
+    res.redirect(req.get('Referer') || '/feed');
+  } catch (err) {
+    console.error('Delete comment error:', err);
+    res.redirect(req.get('Referer') || '/feed');
+  }
+});
+
+// Notifications Page
+app.get('/notifications', isLoggedIn, async (req, res) => {
+  try {
+    const notifications = req.currentUser.notifications || [];
+
+    // Mark unread as read
+    let hasUnread = false;
+    notifications.forEach((n) => {
+      if (!n.read) {
+        n.read = true;
+        hasUnread = true;
+      }
+    });
+
+    if (hasUnread) {
+      await req.currentUser.save();
+    }
+
+    res.render('notifications', {
+      user: req.currentUser,
+      notifications,
+      activePage: 'notifications'
+    });
+  } catch (err) {
+    console.error('Notifications GET error:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Clear Notifications
+app.post('/notifications/clear', isLoggedIn, async (req, res) => {
+  try {
+    req.currentUser.notifications = [];
+    await req.currentUser.save();
+    res.redirect('/notifications');
+  } catch (err) {
+    console.error('Clear notifications error:', err);
+    res.redirect('/notifications');
   }
 });
 

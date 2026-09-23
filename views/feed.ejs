@@ -4,105 +4,166 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aafnokura | Community Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans antialiased min-h-screen">
-  <%- include('partials/navbar', { user }) %>
+<body class="bg-gradient-to-br from-zinc-50 via-zinc-100/50 to-indigo-50/20 text-zinc-900 antialiased min-h-screen selection:bg-indigo-500 selection:text-white">
+  <%- include('partials/navbar', { user, activePage: 'feed' }) %>
 
   <main class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-    <div class="mb-6 flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900">Community Feed</h1>
-        <p class="text-sm text-gray-500">Discover recent posts and join the conversation</p>
+    
+    <!-- Feed Header -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-zinc-200/80 shadow-sm">
+      <div class="space-y-1">
+        <h1 class="text-2xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-2">
+          <span>Community Feed</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        </h1>
+        <p class="text-xs font-medium text-zinc-500">Explore real-time posts and join discussions</p>
       </div>
-      <a href="/dashboard" class="text-xs font-semibold px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition">
-        + New Post
+      <a href="/dashboard" class="inline-flex items-center justify-center gap-2 text-xs font-bold px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl transition-all shadow-sm shadow-indigo-600/20 active:scale-95">
+        + Create Post
       </a>
     </div>
 
+    <!-- Feed Items -->
     <div class="space-y-6">
       <% if (!posts || posts.length === 0) { %>
-        <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-8 text-center">
-          <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-          </svg>
-          <p class="text-gray-500 text-sm">No community posts yet.</p>
+        <div class="bg-white/80 rounded-3xl border border-zinc-200/80 shadow-sm p-12 text-center space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <p class="text-zinc-600 font-semibold text-sm">No community posts yet</p>
+          <p class="text-xs text-zinc-400">Be the first to share an update with the community!</p>
         </div>
       <% } %>
 
       <% posts.forEach(function(post) { %>
-        <% const isLiked = post.likes.some(id => id.toString() === user._id.toString()); %>
+        <% const isLiked = post.likes ? post.likes.some(id => id.toString() === user._id.toString()) : false; %>
         <% const authorName = post.user ? post.user.name : 'Unknown User'; %>
         <% const authorUsername = post.user ? post.user.username : 'user'; %>
 
-        <article class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 space-y-4">
-          <!-- Author info -->
+        <article class="bg-white/90 backdrop-blur-xl rounded-3xl border border-zinc-200/80 shadow-sm p-6 space-y-4 hover:border-zinc-300 transition-all">
+          
+          <!-- Author Info -->
           <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shadow-indigo-500/20">
               <%= authorName.charAt(0).toUpperCase() %>
             </div>
             <div>
-              <p class="text-sm font-bold text-gray-900 leading-none"><%= authorName %></p>
-              <p class="text-xs text-indigo-600 font-medium mt-0.5">@<%= authorUsername %></p>
+              <p class="text-sm font-bold text-zinc-900 leading-tight"><%= authorName %></p>
+              <p class="text-xs text-indigo-600 font-semibold">@<%= authorUsername %></p>
             </div>
-            <span class="text-xs text-gray-400 ml-auto">
+            <span class="text-xs font-medium text-zinc-400 ml-auto">
               <%= new Date(post.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
             </span>
           </div>
 
           <!-- Content -->
-          <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap"><%= post.content %></p>
+          <p class="text-zinc-800 text-sm leading-relaxed whitespace-pre-wrap font-medium"><%= post.content %></p>
 
           <!-- Post Actions -->
-          <div class="pt-3 border-t border-gray-100 flex items-center space-x-4 text-xs">
+          <div class="pt-3 border-t border-zinc-100 flex items-center space-x-4 text-xs font-semibold">
             <form action="/post/<%= post._id %>/like" method="post">
-              <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition font-medium <%= isLiked ? 'bg-red-50 text-red-600 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100' %>">
-                <svg class="w-4 h-4 <%= isLiked ? 'fill-red-600 text-red-600' : 'text-gray-500' %>" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" viewBox="0 0 24 24">
+              <button type="submit" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border transition-all active:scale-90 <%= isLiked ? 'bg-rose-50 text-rose-600 border-rose-200/80 shadow-2xs' : 'bg-zinc-50/80 text-zinc-600 border-zinc-200/80 hover:bg-zinc-100' %>">
+                <svg class="w-4 h-4 transition-transform <%= isLiked ? 'fill-rose-600 text-rose-600 scale-110' : 'text-zinc-400' %>" fill="<%= isLiked ? 'currentColor' : 'none' %>" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
                 <span><%= post.likes ? post.likes.length : 0 %> <%= post.likes && post.likes.length === 1 ? 'Like' : 'Likes' %></span>
               </button>
             </form>
 
-            <span class="text-gray-400 flex items-center gap-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="text-zinc-500 flex items-center gap-1.5 bg-zinc-50/80 px-3.5 py-1.5 rounded-xl border border-zinc-200/80">
+              <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
               </svg>
               <span><%= post.comments ? post.comments.length : 0 %> Comments</span>
             </span>
           </div>
 
-          <!-- Comments section -->
-          <div class="pt-4 border-t border-gray-100 space-y-3">
+          <!-- Comments Container -->
+          <div class="pt-4 border-t border-zinc-100 space-y-3">
             <% if (post.comments && post.comments.length > 0) { %>
-              <div class="space-y-2 bg-gray-50 rounded-xl p-3 max-h-60 overflow-y-auto">
+              <div class="space-y-2 bg-zinc-50/80 rounded-2xl p-3.5 max-h-64 overflow-y-auto border border-zinc-200/60">
                 <% post.comments.forEach(function(comment) { %>
                   <% const commentUser = comment.user ? comment.user.username : 'anonymous'; %>
-                  <div class="text-xs bg-white rounded-lg p-2.5 border border-gray-200/60 shadow-2xs">
-                    <span class="font-bold text-gray-900">@<%= commentUser %></span>
-                    <span class="text-gray-700 ml-1"><%= comment.text %></span>
+                  <% const commentUserId = comment.user ? (comment.user._id ? comment.user._id.toString() : comment.user.toString()) : ''; %>
+                  <% const isCommentOwner = commentUserId === user._id.toString(); %>
+                  <% const isPostOwner = post.user && (post.user._id ? post.user._id.toString() : post.user.toString()) === user._id.toString(); %>
+
+                  <div class="text-xs bg-white rounded-xl p-3 border border-zinc-200/60 shadow-2xs space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-indigo-600">@<%= commentUser %></span>
+                      
+                      <% if (isCommentOwner || isPostOwner) { %>
+                        <div class="flex items-center space-x-2">
+                          <% if (isCommentOwner) { %>
+                            <button 
+                              type="button" 
+                              onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.toggle('hidden')"
+                              class="text-[10px] font-semibold text-zinc-400 hover:text-indigo-600 transition"
+                            >
+                              Edit
+                            </button>
+                          <% } %>
+                          <form action="/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="post" class="inline" onsubmit="return confirm('Delete this comment?');">
+                            <button type="submit" class="text-[10px] font-semibold text-zinc-400 hover:text-rose-600 transition">
+                              Delete
+                            </button>
+                          </form>
+                        </div>
+                      <% } %>
+                    </div>
+
+                    <p class="text-zinc-800 font-medium leading-relaxed"><%= comment.text %></p>
+
+                    <% if (isCommentOwner) { %>
+                      <!-- Hidden Edit Form -->
+                      <form id="edit-comment-<%= comment._id %>" action="/post/<%= post._id %>/comment/<%= comment._id %>/edit" method="post" class="hidden pt-2 space-y-2">
+                        <input 
+                          type="text" 
+                          name="comment" 
+                          value="<%= comment.text %>" 
+                          class="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:bg-white focus:border-indigo-600 transition" 
+                          required 
+                        />
+                        <div class="flex justify-end gap-2">
+                          <button type="button" onclick="document.getElementById('edit-comment-<%= comment._id %>').classList.add('hidden')" class="px-2.5 py-1 text-[10px] font-semibold text-zinc-600 bg-zinc-100 rounded-lg">Cancel</button>
+                          <button type="submit" class="px-2.5 py-1 text-[10px] font-semibold text-white bg-indigo-600 rounded-lg">Save</button>
+                        </div>
+                      </form>
+                    <% } %>
                   </div>
                 <% }) %>
               </div>
             <% } %>
 
-            <!-- Add comment form -->
+            <!-- Add Comment Form -->
             <form action="/post/<%= post._id %>/comment" method="post" class="flex gap-2">
               <input
                 type="text"
                 name="comment"
-                placeholder="Write a comment..."
-                class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition"
+                placeholder="Write a reply..."
+                class="flex-1 bg-zinc-50/80 border border-zinc-200 rounded-2xl px-4 py-2.5 text-xs font-medium outline-none focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all placeholder:text-zinc-400"
                 required
               />
-              <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-semibold rounded-xl transition">
+              <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-2xl transition-all shadow-sm shadow-indigo-600/20 cursor-pointer">
                 Reply
               </button>
             </form>
           </div>
+
         </article>
       <% }) %>
     </div>
+
   </main>
 </body>
 </html>
