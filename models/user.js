@@ -44,6 +44,10 @@ const userSchema = mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    avatar: {
+        type: String,
+        default: ''
+    },
     posts: {
         type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
         default: []

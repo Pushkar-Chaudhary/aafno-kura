@@ -2,7 +2,6 @@
   <div class="bg-slate-950 px-4 py-2 text-[10px] uppercase tracking-[0.28em] text-slate-300">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
       <span>Aafnokura</span>
-      <span class="hidden text-slate-400 sm:inline">Luxury social workspace</span>
       <span><%= new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %></span>
     </div>
   </div>
@@ -12,7 +11,7 @@
       <div class="flex items-center space-x-8">
         <a href="/dashboard" class="group flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-violet-500 to-amber-400 text-xl font-extrabold text-white shadow-[0_10px_30px_rgba(109,40,217,0.25)] transition group-hover:scale-[1.02]">
-            A
+            📭
           </div>
           <div class="flex flex-col">
             <span class="text-2xl font-extrabold leading-none text-slate-900">Aafnokura</span>
@@ -42,9 +41,11 @@
 
       <div class="flex items-center gap-3">
         <a href="/profile" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
-          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-[10px] font-bold text-white">
+          <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-[10px] font-bold text-white">
             <% const isAdminUser = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
-            <% if (isAdminUser) { %>
+            <% if (user && user.avatar) { %>
+              <img src="<%= user.avatar %>" alt="Profile" class="h-full w-full object-cover" />
+            <% } else if (isAdminUser) { %>
               <span>A</span>
             <% } else { %>
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

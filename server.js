@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
@@ -8,6 +9,7 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 
 const postModel = require('./models/post');
 const userModel = require('./models/user');
@@ -52,6 +54,38 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname || '').toLowerCase();
+    const safeBase = (path.basename(file.originalname || 'upload', extension) || 'upload')
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'upload';
+    cb(null, `${Date.now()}-${safeBase}${extension || '.png'}`);
+  }
+});
+
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    req.fileValidationError = 'Only JPG, PNG, WEBP, and GIF images are allowed.';
+    return cb(null, false);
+  }
+});
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rate Limiter: Active for security, but explicitly skipped for localhost testing
 const limiter = rateLimit({
@@ -344,7 +378,20 @@ app.get('/profile/edit', isLoggedIn, async (req, res) => {
   }
 });
 
-app.post('/profile/edit', isLoggedIn, async (req, res) => {
+app.post('/profile/edit', isLoggedIn, upload.single('avatar'), async (req, res) => {
+  if (req.fileValidationError) {
+    return res.status(400).render('edit-profile', {
+      user: req.currentUser,
+      error: req.fileValidationError,
+      values: {
+        name: req.body.name,
+        username: req.body.username,
+        email: req.body.email,
+        age: req.body.age || 18
+      }
+    });
+  }
+
   const rawValues = {
     name: req.body.name,
     username: req.body.username,
@@ -385,6 +432,25 @@ app.post('/profile/edit', isLoggedIn, async (req, res) => {
     user.username = sanitized.username;
     user.email = sanitized.email;
     user.age = sanitized.age;
+
+    if (req.body.useDefaultAvatar === '1') {
+      if (user.avatar) {
+        const oldAvatarPath = path.join(__dirname, 'uploads', path.basename(user.avatar));
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
+      }
+      user.avatar = '';
+    } else if (req.file) {
+      if (user.avatar) {
+        const oldAvatarPath = path.join(__dirname, 'uploads', path.basename(user.avatar));
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
+      }
+      user.avatar = `/uploads/${req.file.filename}`;
+    }
+
     await user.save();
 
     req.currentUser = user;
@@ -413,9 +479,16 @@ app.post('/profile/edit', isLoggedIn, async (req, res) => {
 });
 
 // Create Post
-app.post('/post', isLoggedIn, async (req, res) => {
+app.post('/post', isLoggedIn, upload.single('image'), async (req, res) => {
   const content = String(req.body.content || '').trim();
-  if (!content) return res.redirect('/dashboard');
+
+  if (req.fileValidationError) {
+    return res.redirect('/dashboard');
+  }
+
+  if (!content && !req.file) {
+    return res.redirect('/dashboard');
+  }
 
   if (content.length > 2000) {
     return res.redirect('/dashboard');
@@ -424,7 +497,8 @@ app.post('/post', isLoggedIn, async (req, res) => {
   try {
     const post = await postModel.create({
       user: req.currentUser._id,
-      content
+      content,
+      image: req.file ? `/uploads/${req.file.filename}` : ''
     });
 
     req.currentUser.posts.push(post._id);
@@ -611,8 +685,12 @@ app.get('/post/:id/edit', isLoggedIn, async (req, res) => {
 });
 
 // Update Post
-app.post('/post/:id/edit', isLoggedIn, async (req, res) => {
+app.post('/post/:id/edit', isLoggedIn, upload.single('image'), async (req, res) => {
   const content = String(req.body.content || '').trim();
+
+  if (req.fileValidationError) {
+    return res.redirect('/dashboard');
+  }
 
   try {
     const post = await postModel.findById(req.params.id);
@@ -622,10 +700,36 @@ app.post('/post/:id/edit', isLoggedIn, async (req, res) => {
       return res.status(403).send('Unauthorized to edit this post');
     }
 
-    if (content && content.length <= 2000) {
-      post.content = content;
-      await post.save();
+    if (content.length > 2000) {
+      return res.redirect(`/post/${req.params.id}/edit`);
     }
+
+    if (!content && !post.image && !req.file && req.body.removeImage !== '1') {
+      return res.redirect(`/post/${req.params.id}/edit`);
+    }
+
+    if (req.body.removeImage === '1') {
+      if (post.image) {
+        const fileName = path.basename(post.image);
+        const filePath = path.join(__dirname, 'uploads', fileName);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      post.image = '';
+    } else if (req.file) {
+      if (post.image) {
+        const oldFileName = path.basename(post.image);
+        const oldPath = path.join(__dirname, 'uploads', oldFileName);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+      post.image = `/uploads/${req.file.filename}`;
+    }
+
+    post.content = content;
+    await post.save();
 
     res.redirect('/dashboard');
   } catch (err) {
@@ -645,6 +749,14 @@ app.post('/post/:id/delete', isLoggedIn, async (req, res) => {
 
     if (!isPostOwner && !isAdmin) {
       return res.status(403).send('Unauthorized to delete this post');
+    }
+
+    if (post.image) {
+      const fileName = path.basename(post.image);
+      const filePath = path.join(__dirname, 'uploads', fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     await postModel.findByIdAndDelete(req.params.id);

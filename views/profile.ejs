@@ -25,9 +25,11 @@
   <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
     <div class="mb-8 rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm sm:p-8">
       <div class="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
-        <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm">
+        <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-violet-600 text-white shadow-sm">
           <% const isAdminProfile = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
-          <% if (isAdminProfile) { %>
+          <% if (user.avatar) { %>
+            <img src="<%= user.avatar %>" alt="Profile picture" class="h-full w-full object-cover" />
+          <% } else if (isAdminProfile) { %>
             <span class="text-4xl font-black">A</span>
           <% } else { %>
             <svg class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

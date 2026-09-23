@@ -79,7 +79,7 @@
             <span id="charCounter" class="text-xs font-bold text-slate-500">0 / 2000</span>
           </div>
 
-          <form action="/post" method="post" class="mt-4 space-y-3">
+          <form action="/post" method="post" enctype="multipart/form-data" class="mt-4 space-y-3">
             <textarea
               id="postInput"
               name="content"
@@ -87,11 +87,17 @@
               maxlength="2000"
               placeholder="Write your update..."
               class="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 placeholder:text-slate-400 shadow-inner"
-              required
             ></textarea>
 
+            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+              <label class="flex cursor-pointer items-center justify-between gap-3 text-xs font-semibold text-slate-600">
+                <span>Add image</span>
+                <input type="file" name="image" accept="image/*" class="max-w-[180px] text-[11px] text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-violet-700" />
+              </label>
+            </div>
+
             <div class="flex items-center justify-between pt-1">
-              <p class="text-[11px] text-slate-500">Share something useful with the community.</p>
+              <p class="text-[11px] text-slate-500">Caption + image together is supported.</p>
               <button type="submit" class="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:from-violet-500 hover:to-violet-600">
                 Publish post →
               </button>
@@ -123,6 +129,12 @@
               <div class="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
                 <%= post.content %>
               </div>
+
+              <% if (post.image) { %>
+                <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                  <img src="<%= post.image %>" alt="Post image" class="max-h-[420px] w-full object-cover" />
+                </div>
+              <% } %>
 
               <div class="mt-5 flex items-center justify-between border-t border-slate-200 pt-3 text-xs font-bold">
                 <form action="/post/<%= post._id %>/like" method="post" class="inline">
