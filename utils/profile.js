@@ -26,8 +26,8 @@ function sanitizeProfileUpdate({ name, username, email, age }) {
     throw new Error('Username must be 3-30 characters using letters, numbers, or underscores.');
   }
 
-  if (Number.isNaN(cleanedAge) || cleanedAge < 13) {
-    throw new Error('You must be at least 13 years old.');
+  if (Number.isNaN(cleanedAge) || cleanedAge < 13 || cleanedAge > 120) {
+    throw new Error('Age must be between 13 and 120.');
   }
 
   return {

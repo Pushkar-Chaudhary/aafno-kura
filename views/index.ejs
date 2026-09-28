@@ -11,10 +11,7 @@
   <style>
     body {
       font-family: 'Manrope', sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(139, 92, 246, 0.12), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.15), transparent 25%),
-        linear-gradient(135deg, #f8f5f1 0%, #f4f7ff 40%, #f8fafc 100%);
+      background: #f7f7f5;
       color: #0f172a;
     }
     .font-brand { font-family: 'Manrope', sans-serif; }
@@ -106,7 +103,7 @@
 
           <button 
             type="submit"
-            class="w-full mt-3 py-3.5 px-4 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-600 text-white font-semibold rounded-xl shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition text-sm"
+            class="w-full mt-3 py-3.5 px-4 bg-violet-700 hover:bg-violet-800 text-white font-semibold rounded-xl shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition text-sm"
           >
             Create account
           </button>
@@ -124,7 +121,7 @@
   </div>
 
   <footer class="py-6 text-center text-xs text-slate-500">
-    &copy; <%= new Date().getFullYear() %> Aafnokura &bull; All rights reserved.
+    &copy; <%= new Date().getFullYear() %> Aafnokura &bull; <a href="/privacy" class="hover:text-slate-800">Privacy policy</a>
   </footer>
 
 </body>

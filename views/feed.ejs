@@ -11,9 +11,7 @@
   <style>
     body {
       font-family: 'Manrope', sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 22%),
-        linear-gradient(135deg, #f9f6f2 0%, #f3f7ff 45%, #f8fafc 100%);
+      background: #f7f7f5;
       color: #0f172a;
     }
     .font-brand { font-family: 'Manrope', sans-serif; }
@@ -22,7 +20,7 @@
 <body class="text-slate-800 antialiased min-h-screen selection:bg-violet-500 selection:text-white">
   <%- include('partials/navbar', { user, activePage: 'feed' }) %>
 
-  <% const currentUserIsAdmin = user && (user.role === 'admin' || user.email === 'pushkarchaudhary256@gmail.com'); %>
+  <% const currentUserIsAdmin = user && (user.role === 'admin'); %>
 
   <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
     <div class="mb-8 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
@@ -46,7 +44,7 @@
         <% const isLiked = post.likes ? post.likes.some(id => id.toString() === user._id.toString()) : false; %>
         <% const authorName = post.user ? post.user.name : 'Unknown Author'; %>
         <% const authorUsername = post.user ? post.user.username : 'user'; %>
-        <% const authorIsAdmin = post.user && (post.user.role === 'admin' || post.user.email === 'pushkarchaudhary256@gmail.com'); %>
+        <% const authorIsAdmin = post.user && post.user.role === 'admin'; %>
         <% const isPostOwner = post.user && (post.user._id ? post.user._id.toString() : post.user.toString()) === user._id.toString(); %>
 
         <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

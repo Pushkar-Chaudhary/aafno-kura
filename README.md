@@ -7,7 +7,10 @@ A minimal, fast, and user-friendly social application built with Node.js, Expres
 - **Dashboard**: Personal post management, post composer, and like/unlike tracking.
 - **Community Feed**: Public feed displaying user updates, like toggles, and comment discussions.
 - **Profile Page**: User stats (total posts, total likes received) and post history.
-- **Deployment & Production Security**: Rate limiting (with localhost testing bypass), proxy trust enabled, Helmet security headers, custom 404 page, and dynamic PORT binding.
+- **Image Uploads**: Profile and post images are checked and stored with their database records, so they persist on serverless hosts.
+- **Privacy Policy**: Public `/privacy` page describing stored account data and content.
+- **User Administration**: Admins can promote accounts to admin or return them to user access from `/admin/users`.
+- **Security**: Hashed passwords, protected cookies, rate limits, and Helmet security headers.
 
 ---
 
@@ -18,13 +21,7 @@ A minimal, fast, and user-friendly social application built with Node.js, Expres
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` and configure your environment variables:
-   ```env
-   PORT=3001
-   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/project-1
-   JWT_SECRET=your_jwt_secret_here
-   NODE_ENV=development
-   ```
+3. Configure the existing `.env` file. Keep its current database URI and JWT secret, and set `PORT`, `NODE_ENV`, and `ADMIN_EMAIL` there.
 4. Start the server:
    ```bash
    npm run dev
@@ -54,3 +51,6 @@ This app is production-ready for deployment on hosting services such as **Render
    - `NODE_ENV`: `production`
    - `MONGODB_URI`: Your MongoDB Atlas connection URI
    - `JWT_SECRET`: A long random secret string
+Image data is stored in MongoDB to remain available across serverless invocations; keep uploads within the 4 MB limit.
+
+Set `ADMIN_EMAIL` to the primary administrator's existing account address. That account receives admin access when it signs in. The primary admin can then manage other account roles from **Manage users**. Registration is blocked for the reserved admin address.

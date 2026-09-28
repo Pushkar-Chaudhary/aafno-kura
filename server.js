@@ -17,24 +17,34 @@ const { sanitizeProfileUpdate } = require('./utils/profile');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+const BOOTSTRAP_ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+if (!JWT_SECRET) throw new Error('JWT_SECRET must be set in the environment.');
 
 // Enable trust proxy for cloud deployment (Vercel, Render, Railway, Cloudflare)
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // MongoDB connection helper for local and serverless
+let dbConnectionPromise;
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  if (mongoose.connection.readyState === 2) {
-    await new Promise((res) => setTimeout(res, 300));
-    if (mongoose.connection.readyState === 1) return;
+  if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
+    dbConnectionPromise = null;
   }
-  const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://pushkarchaudhary256_db_user:z6Rv0m626uhtv6ZU@first-backend.pu8xpnw.mongodb.net/project-1';
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) throw new Error('MONGODB_URI must be set in the environment.');
   mongoose.set('strictQuery', true);
-  await mongoose.connect(mongoUri, {
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-  });
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+    }).catch((error) => {
+      dbConnectionPromise = null;
+      throw error;
+    });
+  }
+  await dbConnectionPromise;
 };
 
 // Database Connection Middleware
@@ -55,26 +65,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const uploadStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname || '').toLowerCase();
-    const safeBase = (path.basename(file.originalname || 'upload', extension) || 'upload')
-      .toLowerCase()
-      .replace(/[^a-z0-9-_]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '') || 'upload';
-    cb(null, `${Date.now()}-${safeBase}${extension || '.png'}`);
-  }
-});
-
 const upload = multer({
-  storage: uploadStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedTypes.includes(file.mimetype)) {
@@ -87,27 +80,44 @@ const upload = multer({
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+function imageDataUrl(file) {
+  if (!file) return '';
+  const signatures = [
+    { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
+    { mime: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+    { mime: 'image/gif', bytes: [0x47, 0x49, 0x46, 0x38] },
+    { mime: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46], webp: [0x57, 0x45, 0x42, 0x50] }
+  ];
+  const match = signatures.find(({ bytes }) => bytes.every((byte, i) => file.buffer[i] === byte));
+  if (!match || (match.webp && !match.webp.every((byte, i) => file.buffer[i + 8] === byte))) {
+    throw new Error('The selected file is not a supported image. Choose a JPG, PNG, WEBP, or GIF.');
+  }
+  return `data:${match.mime};base64,${file.buffer.toString('base64')}`;
+}
+
+function removeLegacyUpload(imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith('/uploads/')) return;
+  const target = path.join(__dirname, 'uploads', path.basename(imageUrl));
+  if (fs.existsSync(target)) fs.unlinkSync(target);
+}
+
 // Rate Limiter: Active for security, but explicitly skipped for localhost testing
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false },
-  skip: (req) => {
-    const ip = req.ip || req.socket?.remoteAddress || '';
-    const host = req.hostname || req.headers?.host || '';
-    return (
-      ip === '127.0.0.1' ||
-      ip === '::1' ||
-      ip === '::ffff:127.0.0.1' ||
-      host.includes('localhost') ||
-      host.includes('127.0.0.1')
-    );
-  },
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many sign in attempts. Try again in 15 minutes.'
+});
 
 // Authentication Middleware
 async function isLoggedIn(req, res, next) {
@@ -121,11 +131,9 @@ async function isLoggedIn(req, res, next) {
       res.clearCookie('token');
       return res.redirect('/login');
     }
-
-    // Auto-promote pushkarchaudhary256@gmail.com to Admin
-    if (user.email === 'pushkarchaudhary256@gmail.com' && user.role !== 'admin') {
-      user.role = 'admin';
-      await user.save();
+    if ((decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
+      res.clearCookie('token');
+      return res.redirect('/login');
     }
 
     req.user = decoded;
@@ -135,6 +143,13 @@ async function isLoggedIn(req, res, next) {
     res.clearCookie('token');
     return res.redirect('/login');
   }
+}
+
+function isAdmin(req, res, next) {
+  if (!req.currentUser || req.currentUser.role !== 'admin') {
+    return res.status(403).send('Administrator access is required.');
+  }
+  return next();
 }
 
 // Health Check
@@ -156,11 +171,11 @@ app.get('/', (req, res) => {
 });
 
 // Register User
-app.post('/register', async (req, res) => {
+app.post('/register', authLimiter, async (req, res) => {
   const name = String(req.body.name || '').trim();
   const username = String(req.body.username || '').trim().toLowerCase();
   const email = String(req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '').trim();
+  const password = String(req.body.password || '');
   const rawAge = req.body.age;
   const age = rawAge ? Number(rawAge) : 18;
 
@@ -189,16 +204,23 @@ app.post('/register', async (req, res) => {
     });
   }
 
-  if (password.length < 8) {
+  if (password.length < 8 || password.length > 128) {
     return res.status(400).render('index', {
-      error: 'Password must be at least 8 characters long.',
+      error: 'Password must be 8 to 128 characters long.',
       formValues
     });
   }
 
-  if (isNaN(age) || age < 13) {
+  if (isNaN(age) || age < 13 || age > 120) {
     return res.status(400).render('index', {
-      error: 'You must be at least 13 years old to register.',
+      error: 'Age must be between 13 and 120.',
+      formValues
+    });
+  }
+
+  if (BOOTSTRAP_ADMIN_EMAIL && email === BOOTSTRAP_ADMIN_EMAIL) {
+    return res.status(400).render('index', {
+      error: 'This email is reserved for the primary administrator account. Sign in with its existing account.',
       formValues
     });
   }
@@ -219,14 +241,13 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const isAdmin = email === 'pushkarchaudhary256@gmail.com';
     await userModel.create({
       name,
       username,
       email,
       password: hashedPassword,
       age,
-      role: isAdmin ? 'admin' : 'user'
+      role: 'user'
     });
 
     return res.redirect('/login?registered=1');
@@ -254,9 +275,9 @@ app.get('/login', (req, res) => {
 });
 
 // Login User
-app.post('/login', async (req, res) => {
+app.post('/login', authLimiter, async (req, res) => {
   const identifier = String(req.body.identifier || req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '').trim();
+  const password = String(req.body.password || '');
 
   if (!identifier || !password) {
     return res.status(400).render('login', {
@@ -285,8 +306,13 @@ app.post('/login', async (req, res) => {
       });
     }
 
+    if (BOOTSTRAP_ADMIN_EMAIL && user.email === BOOTSTRAP_ADMIN_EMAIL && user.role !== 'admin') {
+      user.role = 'admin';
+      await user.save();
+    }
+
     const token = jwt.sign(
-      { userid: user._id.toString(), email: user.email, username: user.username },
+      { userid: user._id.toString(), email: user.email, username: user.username, tokenVersion: user.tokenVersion || 0 },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -305,6 +331,45 @@ app.post('/login', async (req, res) => {
       error: 'Something went wrong while logging in. Please try again.',
       registered: false
     });
+  }
+});
+
+app.get('/privacy', (req, res) => res.render('privacy'));
+
+app.get('/admin/users', isLoggedIn, isAdmin, async (req, res) => {
+  try {
+    const users = await userModel.find({}, 'name username email role').sort({ username: 1 });
+    res.render('admin-users', {
+      user: req.currentUser,
+      users,
+      bootstrapAdminEmail: BOOTSTRAP_ADMIN_EMAIL,
+      error: null,
+      message: null
+    });
+  } catch (error) {
+    console.error('Admin user list error:', error);
+    res.status(500).send('Could not load user accounts. Please try again.');
+  }
+});
+
+app.post('/admin/users/:id/role', isLoggedIn, isAdmin, async (req, res) => {
+  const role = String(req.body.role || '');
+  if (!['user', 'admin'].includes(role)) return res.status(400).send('Choose a valid account role.');
+  try {
+    const target = await userModel.findById(req.params.id);
+    if (!target) return res.status(404).send('Account not found.');
+    if (target.email === BOOTSTRAP_ADMIN_EMAIL && role !== 'admin') {
+      return res.status(400).send('The primary administrator account cannot be changed to a standard user.');
+    }
+    if (target.role === 'admin' && role === 'user') {
+      target.tokenVersion = (target.tokenVersion || 0) + 1;
+    }
+    target.role = role;
+    await target.save();
+    return res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Admin role update error:', error);
+    return res.status(500).send('Could not update this account role. Please try again.');
   }
 });
 
@@ -434,28 +499,17 @@ app.post('/profile/edit', isLoggedIn, upload.single('avatar'), async (req, res) 
     user.age = sanitized.age;
 
     if (req.body.useDefaultAvatar === '1') {
-      if (user.avatar) {
-        const oldAvatarPath = path.join(__dirname, 'uploads', path.basename(user.avatar));
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
-        }
-      }
+      removeLegacyUpload(user.avatar);
       user.avatar = '';
     } else if (req.file) {
-      if (user.avatar) {
-        const oldAvatarPath = path.join(__dirname, 'uploads', path.basename(user.avatar));
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
-        }
-      }
-      user.avatar = `/uploads/${req.file.filename}`;
+      user.avatar = imageDataUrl(req.file);
     }
 
     await user.save();
 
     req.currentUser = user;
     const token = jwt.sign(
-      { userid: user._id.toString(), email: user.email, username: user.username },
+      { userid: user._id.toString(), email: user.email, username: user.username, tokenVersion: user.tokenVersion || 0 },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -470,9 +524,9 @@ app.post('/profile/edit', isLoggedIn, upload.single('avatar'), async (req, res) 
     res.redirect('/profile');
   } catch (err) {
     console.error('Profile update error:', err);
-    res.status(500).render('edit-profile', {
+    res.status(err.message.startsWith('The selected file') ? 400 : 500).render('edit-profile', {
       user: req.currentUser,
-      error: 'Something went wrong while updating your profile.',
+      error: err.message.startsWith('The selected file') ? err.message : 'Something went wrong while updating your profile.',
       values: sanitized || rawValues
     });
   }
@@ -483,7 +537,7 @@ app.post('/post', isLoggedIn, upload.single('image'), async (req, res) => {
   const content = String(req.body.content || '').trim();
 
   if (req.fileValidationError) {
-    return res.redirect('/dashboard');
+    return res.status(400).send(req.fileValidationError);
   }
 
   if (!content && !req.file) {
@@ -498,13 +552,13 @@ app.post('/post', isLoggedIn, upload.single('image'), async (req, res) => {
     const post = await postModel.create({
       user: req.currentUser._id,
       content,
-      image: req.file ? `/uploads/${req.file.filename}` : ''
+      image: imageDataUrl(req.file)
     });
 
     req.currentUser.posts.push(post._id);
     await req.currentUser.save();
 
-    res.redirect('/dashboard');
+    res.status(err.message.startsWith('The selected file') ? 400 : 500).send(err.message.startsWith('The selected file') ? err.message : 'Could not publish this post. Please try again.');
   } catch (err) {
     console.error('Create post error:', err);
     res.redirect('/dashboard');
@@ -610,7 +664,7 @@ app.post('/post/:postId/comment/:commentId/delete', isLoggedIn, async (req, res)
 
     const isCommentOwner = comment.user.toString() === req.currentUser._id.toString();
     const isPostOwner = post.user.toString() === req.currentUser._id.toString();
-    const isAdmin = req.currentUser.role === 'admin' || req.currentUser.email === 'pushkarchaudhary256@gmail.com';
+    const isAdmin = req.currentUser.role === 'admin';
 
     if (!isCommentOwner && !isPostOwner && !isAdmin) {
       return res.status(403).send('Unauthorized to delete this comment');
@@ -689,7 +743,7 @@ app.post('/post/:id/edit', isLoggedIn, upload.single('image'), async (req, res) 
   const content = String(req.body.content || '').trim();
 
   if (req.fileValidationError) {
-    return res.redirect('/dashboard');
+    return res.status(400).send(req.fileValidationError);
   }
 
   try {
@@ -709,23 +763,10 @@ app.post('/post/:id/edit', isLoggedIn, upload.single('image'), async (req, res) 
     }
 
     if (req.body.removeImage === '1') {
-      if (post.image) {
-        const fileName = path.basename(post.image);
-        const filePath = path.join(__dirname, 'uploads', fileName);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      }
+      removeLegacyUpload(post.image);
       post.image = '';
     } else if (req.file) {
-      if (post.image) {
-        const oldFileName = path.basename(post.image);
-        const oldPath = path.join(__dirname, 'uploads', oldFileName);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
-      post.image = `/uploads/${req.file.filename}`;
+      post.image = imageDataUrl(req.file);
     }
 
     post.content = content;
@@ -734,7 +775,8 @@ app.post('/post/:id/edit', isLoggedIn, upload.single('image'), async (req, res) 
     res.redirect('/dashboard');
   } catch (err) {
     console.error('Edit post POST error:', err);
-    res.redirect('/dashboard');
+    res.status(err.message.startsWith('The selected file') ? 400 : 500)
+      .send(err.message.startsWith('The selected file') ? err.message : 'Could not update this post. Please try again.');
   }
 });
 
@@ -745,18 +787,14 @@ app.post('/post/:id/delete', isLoggedIn, async (req, res) => {
     if (!post) return res.redirect(req.get('Referer') || '/dashboard');
 
     const isPostOwner = post.user.toString() === req.currentUser._id.toString();
-    const isAdmin = req.currentUser.role === 'admin' || req.currentUser.email === 'pushkarchaudhary256@gmail.com';
+    const isAdmin = req.currentUser.role === 'admin';
 
     if (!isPostOwner && !isAdmin) {
       return res.status(403).send('Unauthorized to delete this post');
     }
 
     if (post.image) {
-      const fileName = path.basename(post.image);
-      const filePath = path.join(__dirname, 'uploads', fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      removeLegacyUpload(post.image);
     }
 
     await postModel.findByIdAndDelete(req.params.id);
@@ -791,10 +829,10 @@ app.use((req, res) => {
 // Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message || 'An unexpected error occurred.'
-  });
+  if (err instanceof multer.MulterError) {
+    return res.status(400).send(err.code === 'LIMIT_FILE_SIZE' ? 'Images must be 4 MB or smaller.' : 'The uploaded file could not be processed.');
+  }
+  res.status(500).send('Something went wrong. Please try again.');
 });
 
 const startServer = async () => {

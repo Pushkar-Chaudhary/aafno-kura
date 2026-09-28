@@ -11,9 +11,7 @@
   <style>
     body {
       font-family: 'Manrope', sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(139, 92, 246, 0.10), transparent 22%),
-        linear-gradient(135deg, #f9f6f2 0%, #f3f7ff 45%, #f8fafc 100%);
+      background: #f7f7f5;
       color: #0f172a;
     }
   </style>
@@ -41,7 +39,7 @@
         <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
           <label class="flex cursor-pointer items-center justify-between gap-3 text-xs font-semibold text-slate-600">
             <span>Replace image</span>
-            <input type="file" name="image" accept="image/*" class="max-w-[180px] text-[11px] text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-violet-700" />
+            <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" class="max-w-[180px] text-[11px] text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-violet-700" />
           </label>
         </div>
 
@@ -56,7 +54,7 @@
         <% } %>
 
         <div class="flex items-center gap-3 pt-2">
-          <button type="submit" class="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:from-violet-500 hover:to-violet-600">
+          <button type="submit" class="rounded-xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-[0_12px_28px_rgba(109,40,217,0.22)] transition hover:bg-violet-800">
             Save changes →
           </button>
           <a href="/dashboard" class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100">

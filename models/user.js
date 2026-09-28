@@ -25,7 +25,8 @@ const userSchema = mongoose.Schema({
     age: {
         type: Number,
         default: 18,
-        min: 13
+        min: 13,
+        max: 120
     },
     email: {
         type: String,
@@ -39,6 +40,7 @@ const userSchema = mongoose.Schema({
         required: true,
         minlength: 8
     },
+    tokenVersion: { type: Number, default: 0 },
     role: {
         type: String,
         enum: ['user', 'admin'],

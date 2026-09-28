@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aafnokura | Manage users</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-stone-50 text-slate-800">
+  <%- include('partials/navbar', { user, activePage: 'admin' }) %>
+  <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <div class="mb-7">
+      <p class="text-xs font-semibold uppercase tracking-widest text-violet-700">Administration</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Manage users</h1>
+      <p class="mt-2 text-sm text-slate-600">Choose which accounts can manage users and site content.</p>
+    </div>
+
+    <% if (message) { %><p role="status" class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"><%= message %></p><% } %>
+    <% if (error) { %><p role="alert" class="mb-5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"><%= error %></p><% } %>
+
+    <% if (bootstrapAdminEmail && !users.some(account => account.email === bootstrapAdminEmail)) { %>
+      <aside class="mb-6 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm leading-6 text-violet-950">
+        The configured primary administrator account (<strong><%= bootstrapAdminEmail %></strong>) does not exist yet. Ask the site operator to provision it before signing in.
+      </aside>
+    <% } %>
+
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="hidden grid-cols-[1fr_1.2fr_9rem_13rem] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:grid">
+        <span>Name</span><span>Email</span><span>Role</span><span>Update access</span>
+      </div>
+      <% users.forEach(account => { %>
+        <div class="grid gap-3 border-b border-slate-100 px-5 py-4 last:border-0 sm:grid-cols-[1fr_1.2fr_9rem_13rem] sm:items-center sm:gap-4">
+          <div><p class="font-semibold text-slate-900"><%= account.name %></p><p class="text-xs text-slate-500">@<%= account.username %></p></div>
+          <p class="break-all text-sm text-slate-600"><%= account.email %></p>
+          <p><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <%= account.role === 'admin' ? 'bg-violet-100 text-violet-800' : 'bg-slate-100 text-slate-700' %>"><%= account.role === 'admin' ? 'Admin' : 'User' %></span></p>
+          <% if (account.email === bootstrapAdminEmail) { %>
+            <p class="text-xs text-slate-500">Primary admin</p>
+          <% } else { %>
+            <form action="/admin/users/<%= account._id %>/role" method="post" class="flex items-center gap-2">
+              <label class="sr-only" for="role-<%= account._id %>">Role for <%= account.username %></label>
+              <select id="role-<%= account._id %>" name="role" class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm focus:border-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-100">
+                <option value="user" <%= account.role === 'user' ? 'selected' : '' %>>User</option>
+                <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>Admin</option>
+              </select>
+              <button class="rounded-lg bg-violet-700 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-800">Save</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+      <% if (users.length === 0) { %><p class="px-5 py-10 text-center text-sm text-slate-500">No accounts yet.</p><% } %>
+    </div>
+  </main>
+</body>
+</html>
